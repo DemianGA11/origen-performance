@@ -24,9 +24,12 @@ export default function Home() {
         </p>
 
         <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-          <button className="rounded-full bg-[#20201D] px-8 py-4 font-semibold text-[#FAF8F2]">
+          <Link
+            href="/shop"
+            className="rounded-full bg-[#20201D] px-8 py-4 font-semibold text-[#FAF8F2] transition hover:scale-[1.02]"
+          >
             Explorar productos
-          </button>
+          </Link>
 
           <Link
             href="/profile"

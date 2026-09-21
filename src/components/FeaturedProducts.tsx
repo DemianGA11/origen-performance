@@ -1,5 +1,5 @@
 import { products } from "@/data/products";
-
+import Link from "next/link";
 export default function FeaturedProducts() {
   return (
     <section id="shop" className="bg-[#F2EBDD] px-6 py-24">
@@ -16,9 +16,12 @@ export default function FeaturedProducts() {
             </h2>
           </div>
 
-          <button className="text-left text-sm font-semibold">
+          <Link
+            href="/shop"
+            className="text-left text-sm font-semibold"
+          >
             Ver todos →
-          </button>
+            </Link>
         </div>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
