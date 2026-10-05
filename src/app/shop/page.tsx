@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
+import QuickAddButton from "@/components/product/QuickAddButton";
 import { products } from "@/data/products";
 
 export default function ShopPage() {
@@ -101,9 +102,7 @@ export default function ShopPage() {
                       ${product.price} MXN
                     </p>
 
-                    <button className="flex h-11 w-11 items-center justify-center rounded-full bg-[#20201D] text-xl text-white transition hover:scale-105">
-                      +
-                    </button>
+                    <QuickAddButton product={product} />
                   </div>
                 </div>
 

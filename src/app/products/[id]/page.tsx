@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import Navbar from "@/components/Navbar";
+import AddToCart from "@/components/product/AddToCart";
 import { products } from "@/data/products";
 
 type ProductPageProps = {
@@ -29,12 +30,32 @@ export default async function ProductPage({
       <section className="px-6 pb-24 pt-36">
         <div className="mx-auto max-w-7xl">
 
-          <Link
-            href="/shop"
-            className="mb-10 inline-block text-sm font-semibold text-[#20201D]/50 transition hover:text-[#20201D]"
+          <nav
+            aria-label="Breadcrumb"
+            className="mb-10 flex flex-wrap items-center gap-2 text-sm"
           >
-            ← Volver a la tienda
-          </Link>
+            <Link
+              href="/"
+              className="text-[#20201D]/45 transition hover:text-[#20201D]"
+            >
+              Inicio
+            </Link>
+
+            <span className="text-[#20201D]/25">/</span>
+
+            <Link
+              href="/shop"
+              className="text-[#20201D]/45 transition hover:text-[#20201D]"
+            >
+              Shop
+            </Link>
+
+            <span className="text-[#20201D]/25">/</span>
+
+            <span className="font-semibold text-[#20201D]">
+              {product.name}
+            </span>
+          </nav>
 
           <div className="grid gap-14 lg:grid-cols-2">
 
@@ -92,27 +113,7 @@ export default async function ProductPage({
                 ${product.price} MXN
               </p>
 
-              <div className="mt-8 flex gap-3">
-
-                <div className="flex items-center rounded-full border border-[#20201D]/15">
-                  <button className="px-5 py-4 text-lg">
-                    −
-                  </button>
-
-                  <span className="min-w-8 text-center font-semibold">
-                    1
-                  </span>
-
-                  <button className="px-5 py-4 text-lg">
-                    +
-                  </button>
-                </div>
-
-                <button className="flex-1 rounded-full bg-[#20201D] px-8 py-4 font-semibold text-[#FAF8F2] transition hover:scale-[1.01]">
-                  Agregar al carrito
-                </button>
-
-              </div>
+              <AddToCart product={product} />
 
               <div className="mt-8 grid grid-cols-3 gap-3 border-t border-[#20201D]/10 pt-7">
 

@@ -175,9 +175,12 @@ export default function CartPage() {
                   <span>${subtotal} MXN</span>
                 </div>
 
-                <button className="mt-7 w-full rounded-full bg-[#20201D] px-6 py-4 font-semibold text-white">
+                <Link
+                  href="/checkout"
+                  className="mt-6 block w-full rounded-full bg-[#20201D] px-6 py-4 text-center font-semibold text-[#FAF8F2] transition hover:opacity-80"
+                >
                   Continuar al checkout →
-                </button>
+                </Link>
 
               </aside>
 

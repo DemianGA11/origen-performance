@@ -4,6 +4,7 @@ import {
   Recommendation,
 } from "@/lib/recommendationEngine";
 import { useState } from "react";
+import Link from "next/link";
 
 type Answers = {
   goal: string | null;
@@ -309,15 +310,40 @@ const [results, setResults] = useState<Recommendation[] | null>(null);
     <section className="min-h-screen bg-[#F2EBDD] px-6 py-16 text-[#20201D]">
       <div className="mx-auto max-w-4xl">
 
-        <div className="mb-12 flex items-center justify-between">
-          <p className="text-sm font-bold tracking-[0.25em]">
-            ORIGEN PROFILE
+        {/* NAVEGACIÓN DEL CUESTIONARIO */}
+      <header className="mb-12 flex items-center justify-between">
+        <Link
+          href="/"
+          className="group"
+          aria-label="Volver al inicio"
+        >
+          <p className="text-lg font-bold tracking-[0.18em] transition-opacity group-hover:opacity-60">
+            ORIGEN
           </p>
 
-          <p className="text-sm text-[#20201D]/50">
-            {currentStep + 1} de {questions.length}
+          <p className="text-[9px] font-semibold tracking-[0.35em] text-[#68705A]">
+            PERFORMANCE
           </p>
-        </div>
+        </Link>
+
+        <Link
+          href="/"
+          className="rounded-full border border-[#20201D]/15 px-5 py-2.5 text-sm font-semibold text-[#20201D]/60 transition hover:border-[#20201D] hover:text-[#20201D]"
+        >
+          Salir
+        </Link>
+      </header>
+
+      {/* INFORMACIÓN DEL PROFILE */}
+      <div className="mb-12 flex items-center justify-between">
+        <p className="text-sm font-bold tracking-[0.25em]">
+          ORIGEN PROFILE
+        </p>
+
+        <p className="text-sm text-[#20201D]/50">
+          {currentStep + 1} de {questions.length}
+        </p>
+      </div>
 
         <div className="mb-3 h-1 overflow-hidden rounded-full bg-[#20201D]/10">
           <div
@@ -403,6 +429,13 @@ type ResultsScreenProps = {
   onRestart: () => void;
 };
 
+const productLinks: Record<string, string> = {
+  creatine: "/products/1",
+  protein: "/products/2",
+  electrolytes: "/products/3",
+  omega3: "/products/4",
+};
+
 function ResultsScreen({
   results,
   onRestart,
@@ -416,10 +449,33 @@ function ResultsScreen({
     ALREADY_USING: "Ya lo utilizas",
     PROFESSIONAL_REVIEW: "Revisión profesional",
   };
-
+  
   return (
     <section className="min-h-screen bg-[#F2EBDD] px-6 py-16 text-[#20201D]">
       <div className="mx-auto max-w-5xl">
+        {/* NAVEGACIÓN DE RESULTADOS */}
+        <header className="mb-14 flex items-center justify-between">
+          <Link
+            href="/"
+            className="group"
+            aria-label="Volver al inicio"
+          >
+            <p className="text-lg font-bold tracking-[0.18em] transition-opacity group-hover:opacity-60">
+              ORIGEN
+            </p>
+
+            <p className="text-[9px] font-semibold tracking-[0.35em] text-[#68705A]">
+              PERFORMANCE
+            </p>
+          </Link>
+
+          <Link
+            href="/"
+            className="rounded-full border border-[#20201D]/15 px-5 py-2.5 text-sm font-semibold text-[#20201D]/60 transition hover:border-[#20201D] hover:text-[#20201D]"
+          >
+            Volver al inicio
+          </Link>
+        </header>
 
         <p className="mb-4 text-sm font-bold tracking-[0.25em] text-[#68705A]">
           YOUR ORIGEN PROFILE
@@ -477,6 +533,16 @@ function ResultsScreen({
                     </li>
                   ))}
                 </ul>
+                {productLinks[result.key] &&
+                  (result.status === "RELEVANT" ||
+                    result.status === "POSSIBLY_USEFUL") && (
+                    <Link
+                      href={productLinks[result.key]}
+                      className="mt-6 inline-flex items-center rounded-full bg-[#20201D] px-6 py-3 text-sm font-semibold text-[#FAF8F2] transition hover:opacity-80"
+                    >
+                      Ver producto en Origen →
+                    </Link>
+                  )}
 
               </div>
             </article>
@@ -492,12 +558,12 @@ function ResultsScreen({
             Repetir evaluación
           </button>
 
-          <a
-            href="/"
-            className="rounded-full bg-[#20201D] px-7 py-3 text-center font-semibold text-[#FAF8F2]"
+          <Link
+            href="/shop"
+            className="rounded-full bg-[#20201D] px-7 py-3 text-center font-semibold text-[#FAF8F2] transition hover:opacity-80"
           >
-            Explorar Origen Verified
-          </a>
+            Explorar productos verificados →
+          </Link>
 
         </div>
 

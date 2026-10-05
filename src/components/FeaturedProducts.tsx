@@ -1,4 +1,5 @@
 import { products } from "@/data/products";
+import QuickAddButton from "@/components/product/QuickAddButton";
 import Link from "next/link";
 export default function FeaturedProducts() {
   return (
@@ -63,9 +64,7 @@ export default function FeaturedProducts() {
                   ${product.price} MXN
                 </p>
 
-                <button className="flex h-10 w-10 items-center justify-center rounded-full border border-[#20201D]/20 transition hover:bg-[#20201D] hover:text-white">
-                  +
-                </button>
+                <QuickAddButton product={product} />
               </div>
 
             </article>
