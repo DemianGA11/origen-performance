@@ -5,7 +5,8 @@ import Navbar from "@/components/Navbar";
 import QuickAddButton from "@/components/product/QuickAddButton";
 import { products } from "@/data/products";
 import { useRouter, useSearchParams } from "next/navigation";
-export default function ShopPage() {
+import { Suspense } from "react";
+function ShopContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -196,5 +197,22 @@ export default function ShopPage() {
         </div>
       </section>
     </main>
+  );
+}
+export default function ShopPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-[#FAF8F2] px-6 pt-32">
+          <div className="mx-auto max-w-7xl">
+            <p className="text-sm text-[#20201D]/50">
+              Cargando productos...
+            </p>
+          </div>
+        </main>
+      }
+    >
+      <ShopContent />
+    </Suspense>
   );
 }
