@@ -1,3 +1,4 @@
+import Link from "next/link";
 const goals = [
   {
     name: "BUILD",
@@ -42,8 +43,9 @@ export default function GoalCards() {
 
         <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
           {goals.map((goal, index) => (
-            <article
+            <Link
               key={goal.name}
+              href={`/shop?goal=${goal.name}`}
               className="group flex min-h-[330px] flex-col justify-between rounded-3xl border border-[#20201D]/10 bg-[#F2EBDD] p-7 transition duration-300 hover:-translate-y-1"
             >
               <div>
@@ -66,10 +68,10 @@ export default function GoalCards() {
                 </p>
               </div>
 
-              <button className="mt-8 text-left text-sm font-semibold">
+              <span className="mt-8 text-left text-sm font-semibold">
                 Explorar →
-              </button>
-            </article>
+              </span>
+            </Link>
           ))}
         </div>
 

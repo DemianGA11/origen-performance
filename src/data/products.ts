@@ -107,4 +107,60 @@ export const products: Product[] = [
       "Enfoque complementario a la alimentación.",
     ],
   },
+  {
+  id: 5,
+  name: "Real Food Protein Bar",
+  category: "PERFORMANCE FOOD",
+  description:
+    "Proteína y energía en una barra elaborada alrededor de ingredientes simples y reconocibles.",
+  longDescription:
+    "Una barra de proteína diseñada como alimento funcional para el día a día y alrededor del entrenamiento. Combina proteína de suero como fuente principal con miel, cacao y otros ingredientes seleccionados bajo la filosofía de formulación simple de Origen.",
+  price: 69,
+  verified: true,
+  goal: ["BUILD", "RECOVER", "NOURISH"],
+  size: "60 g · 1 barra",
+  ingredients: [
+    "Proteína de suero de leche",
+    "Miel",
+    "Cacao",
+    "Manteca de cacao",
+    "Colágeno hidrolizado",
+    "Sal de mar",
+  ],
+  verifiedReasons: [
+    "Proteína de suero como fuente principal de proteína",
+    "Lista corta de ingredientes reconocibles",
+    "Sin mezcla propietaria",
+    "Sin colorantes artificiales",
+    "Diseñada como una alternativa práctica de alimento rico en proteína",
+  ],
+},
+{
+  id: 6,
+  name: "Pre-Performance",
+  category: "PERFORMANCE",
+  description:
+    "Fórmula pre-entrenamiento inspirada en compuestos presentes naturalmente en alimentos.",
+  longDescription:
+    "Una propuesta de pre-entrenamiento centrada en rendimiento y transparencia. Combina una fuente estandarizada de nitratos procedente de betabel, granada rica en polifenoles, electrolitos y cafeína en una formulación deliberadamente sencilla.",
+  price: 549,
+  verified: true,
+  goal: ["BUILD", "ENDURE"],
+  size: "300 g · 30 porciones",
+  ingredients: [
+    "Concentrado de betabel estandarizado en nitratos",
+    "Extracto de granada",
+    "Sodio",
+    "Potasio",
+    "Cafeína",
+    "Sabor natural",
+  ],
+  verifiedReasons: [
+    "Fuente de nitratos de origen vegetal",
+    "Ingredientes seleccionados con un propósito definido",
+    "Sin mezcla propietaria",
+    "Contenido de cafeína declarado",
+    "Formulación enfocada en rendimiento sin ingredientes innecesarios",
+  ],
+},
 ];
