@@ -2,6 +2,8 @@ export type Product = {
   id: number;
   name: string;
   category: string;
+  packaging: "jar" | "pouch" | "sachet" | "bottle" | "bar";
+  images: string[];
   description: string;
   longDescription: string;
   price: number;
@@ -10,13 +12,22 @@ export type Product = {
   size: string;
   ingredients: string[];
   verifiedReasons: string[];
+  
+  
 };
+
 
 export const products: Product[] = [
   {
     id: 1,
     name: "Creatina Monohidratada",
     category: "PERFORMANCE",
+    packaging: "jar",
+    images: [
+      "/products/creatina/principal.webp",
+      "/products/creatina/ingredientes.webp",
+      "/products/creatina/nutrimental.webp",
+    ],
     description:
       "Creatina monohidratada de fórmula simple, sin mezclas propietarias.",
     longDescription:
@@ -37,6 +48,12 @@ export const products: Product[] = [
     id: 2,
     name: "Grass-Fed Whey",
     category: "PROTEIN",
+    packaging: "pouch",
+    images: [
+      "/products/whey/principal.webp",
+      "/products/whey/ingredientes.webp",
+      "/products/whey/nutrimental.webp",
+    ],
     description:
       "Proteína de suero proveniente de ganado alimentado con pasto.",
     longDescription:
@@ -61,6 +78,12 @@ export const products: Product[] = [
     id: 3,
     name: "Electrolitos",
     category: "HYDRATION",
+    packaging: "sachet",
+    images: [
+      "/products/electrolitos/principal.webp",
+      "/products/electrolitos/ingredientes.webp",
+      "/products/electrolitos/nutrimental.webp",
+    ],
     description:
       "Mezcla de electrolitos orientada a hidratación y entrenamiento.",
     longDescription:
@@ -86,6 +109,12 @@ export const products: Product[] = [
     id: 4,
     name: "Omega-3",
     category: "NUTRITION",
+    packaging: "bottle",
+    images: [
+      "/products/omega3/principal.webp",
+      "/products/omega3/ingredientes.webp",
+      "/products/omega3/nutrimental.webp",
+    ],
     description:
       "Fuente concentrada de EPA y DHA con información clara de composición.",
     longDescription:
@@ -111,6 +140,12 @@ export const products: Product[] = [
   id: 5,
   name: "Real Food Protein Bar",
   category: "PERFORMANCE FOOD",
+  packaging: "bar",
+  images: [
+      "/products/protein-bar/principal.webp",
+      "/products/protein-bar/ingredientes.webp",
+      "/products/protein-bar/nutrimental.webp",
+    ],
   description:
     "Proteína y energía en una barra elaborada alrededor de ingredientes simples y reconocibles.",
   longDescription:
@@ -139,6 +174,12 @@ export const products: Product[] = [
   id: 6,
   name: "Pre-Performance",
   category: "PERFORMANCE",
+  packaging: "jar",
+  images: [
+      "/products/pre-performance/principal.webp",
+      "/products/pre-performance/ingredientes.webp",
+      "/products/pre-performance/nutrimental.webp",
+    ],
   description:
     "Fórmula pre-entrenamiento inspirada en compuestos presentes naturalmente en alimentos.",
   longDescription:

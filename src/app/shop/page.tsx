@@ -6,6 +6,8 @@ import QuickAddButton from "@/components/product/QuickAddButton";
 import { products } from "@/data/products";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
+import ProductVisual from "@/components/product/ProductVisual";
+import ProductGallery from "@/components/product/ProductGallery";
 function ShopContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -110,30 +112,9 @@ function ShopContent() {
                       {String(product.id).padStart(2, "0")}
                     </span>
 
-                    {/* Elemento decorativo */}
-                    <div className="absolute h-56 w-56 rounded-full border border-[#20201D]/5" />
-                    <div className="absolute h-72 w-72 rounded-full border border-[#20201D]/5" />
-
                     {/* Producto provisional */}
-                    <div className="relative flex h-52 w-40 items-center justify-center rounded-[1.4rem] border border-[#20201D]/10 bg-[#E8E0D0] shadow-[0_18px_40px_rgba(32,32,29,0.08)] transition duration-500 group-hover:-translate-y-3 group-hover:rotate-[-1deg] group-hover:shadow-[0_25px_50px_rgba(32,32,29,0.14)]">
-
-                      <div className="px-5 text-center">
-                        <p className="text-[9px] font-semibold tracking-[0.3em] text-[#68705A]">
-                          ORIGEN
-                        </p>
-
-                        <div className="mx-auto my-4 h-px w-8 bg-[#20201D]/20" />
-
-                        <p className="text-xs font-bold tracking-[0.15em] text-[#20201D]">
-                          {product.category}
-                        </p>
-
-                        <p className="mt-3 text-[9px] tracking-[0.12em] text-[#20201D]/40">
-                          PERFORMANCE NUTRITION
-                        </p>
-                      </div>
-
-                    </div>
+                    {/* Representación visual según el envase */}
+                    <ProductVisual product={product} />
 
                     {/* Ver producto */}
                     <span className="absolute bottom-5 right-5 translate-y-2 text-xs font-semibold text-[#20201D]/0 transition duration-300 group-hover:translate-y-0 group-hover:text-[#20201D]/50">

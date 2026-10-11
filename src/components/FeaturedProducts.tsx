@@ -1,5 +1,6 @@
 import { products } from "@/data/products";
 import QuickAddButton from "@/components/product/QuickAddButton";
+import ProductVisual from "@/components/product/ProductVisual";
 import Link from "next/link";
 
 export default function FeaturedProducts() {
@@ -41,8 +42,7 @@ export default function FeaturedProducts() {
 
               {/* Visual del producto */}
               <Link href={`/products/${product.id}`} className="block">
-                <div className="relative flex aspect-[4/3] cursor-pointer items-center justify-center overflow-hidden rounded-[2rem] border border-[#20201D]/5 bg-[#FAF8F2] transition duration-300 group-hover:border-[#20201D]/10 group-hover:shadow-lg">
-
+                  <div className="relative flex aspect-square cursor-pointer items-center justify-center overflow-hidden rounded-[2rem] border border-[#20201D]/5 bg-[#F2EBDD] transition duration-300 group-hover:border-[#20201D]/10 group-hover:shadow-lg">
                   {/* Verified */}
                   {product.verified && (
                     <span className="absolute left-5 top-5 z-10 rounded-full bg-[#68705A] px-3 py-2 text-[9px] font-bold tracking-[0.16em] text-white">
@@ -55,30 +55,9 @@ export default function FeaturedProducts() {
                     {String(product.id).padStart(2, "0")}
                   </span>
 
-                  {/* Círculos decorativos */}
-                  <div className="absolute h-44 w-44 rounded-full border border-[#20201D]/5" />
-                  <div className="absolute h-56 w-56 rounded-full border border-[#20201D]/5" />
+                  {/* Visual del envase */}
 
-                  {/* Packaging provisional */}
-                  <div className="relative flex h-44 w-32 items-center justify-center rounded-[1.3rem] border border-[#20201D]/10 bg-[#E8E0D0] shadow-[0_15px_35px_rgba(32,32,29,0.08)] transition duration-500 group-hover:-translate-y-2 group-hover:rotate-[-1deg] group-hover:shadow-[0_22px_45px_rgba(32,32,29,0.13)]">
-
-                    <div className="px-4 text-center">
-                      <p className="text-[8px] font-semibold tracking-[0.3em] text-[#68705A]">
-                        ORIGEN
-                      </p>
-
-                      <div className="mx-auto my-3 h-px w-7 bg-[#20201D]/20" />
-
-                      <p className="text-[10px] font-bold tracking-[0.14em] text-[#20201D]">
-                        {product.category}
-                      </p>
-
-                      <p className="mt-3 text-[8px] tracking-[0.1em] text-[#20201D]/40">
-                        PERFORMANCE NUTRITION
-                      </p>
-                    </div>
-
-                  </div>
+                  <ProductVisual product={product} />
 
                   {/* Hover */}
                   <span className="absolute bottom-5 right-5 translate-y-2 text-xs font-semibold text-[#20201D]/0 transition duration-300 group-hover:translate-y-0 group-hover:text-[#20201D]/50">

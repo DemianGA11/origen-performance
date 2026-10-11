@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import AddToCart from "@/components/product/AddToCart";
+import ProductGallery from "@/components/product/ProductGallery";
 import { products } from "@/data/products";
 
 type ProductPageProps = {
@@ -61,33 +62,8 @@ export default async function ProductPage({
 
             {/* VISUAL DEL PRODUCTO */}
 
-            <div className="flex min-h-[550px] items-center justify-center rounded-[2.5rem] bg-[#F2EBDD] p-10">
-              <div className="relative flex h-[360px] w-[250px] items-center justify-center rounded-[2rem] border border-[#20201D]/10 bg-[#E8E0D0] shadow-xl">
-
-                {product.verified && (
-                  <span className="absolute -right-5 top-7 rounded-full bg-[#68705A] px-4 py-2 text-[10px] font-bold tracking-[0.15em] text-white">
-                    ✓ ORIGEN VERIFIED
-                  </span>
-                )}
-
-                <div className="text-center">
-                  <p className="text-2xl font-bold tracking-[0.15em]">
-                    ORIGEN
-                  </p>
-
-                  <p className="mt-2 text-xs font-semibold tracking-[0.25em] text-[#68705A]">
-                    {product.category}
-                  </p>
-
-                  <div className="mx-auto my-8 h-px w-16 bg-[#20201D]/20" />
-
-                  <p className="px-6 text-sm font-semibold">
-                    {product.name}
-                  </p>
-                </div>
-
-              </div>
-            </div>
+            {/* GALERÍA DEL PRODUCTO */}
+            <ProductGallery product={product} />
 
             {/* INFORMACIÓN */}
 
