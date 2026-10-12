@@ -130,15 +130,13 @@ export async function POST(request: NextRequest) {
           throw new Error("Sesión expirada sin identificador de pedido.");
         }
 
-        const { error } = await supabaseAdmin
-          .from("orders")
-          .update({
-            payment_status: "expired",
-            order_status: "expired",
-          })
-          .eq("id", orderId)
-          .eq("stripe_session_id", session.id)
-          .eq("payment_status", "pending");
+        const { error } = await supabaseAdmin.rpc(
+          "expire_stripe_order",
+        {
+          p_order_id: orderId,
+          p_stripe_session_id: session.id,
+        }
+      );
 
         if (error) {
           console.error("Error al expirar el pedido:", error);

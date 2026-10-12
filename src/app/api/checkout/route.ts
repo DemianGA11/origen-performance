@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { products } from "@/data/products";
+
+type CheckoutCatalogProduct = {
+  id: number;
+  name: string;
+  price: number;
+  is_active: boolean;
+  stock: number;
+};
+
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { createHash } from "node:crypto";
 export const runtime = "nodejs";
@@ -77,12 +86,107 @@ export async function POST(request: NextRequest) {
             { status: 400 }
         );
     }
+    
+    // Consultar el catálogo de Supabase.
+    // Por ahora, esta consulta no modifica el checkout.
+    const { data: catalogProducts, error: catalogError } =
+      await supabaseAdmin
+        .from("products")
+        .select("id, name, price, is_active, stock")
+        .in("id", productIds)
+        .returns<CheckoutCatalogProduct[]>();
+
+    if (catalogError) {
+      console.error(
+        "Error al consultar el catálogo de Supabase:",
+        catalogError
+      );
+
+      return NextResponse.json(
+        { error: "No se pudo consultar el catálogo." },
+        { status: 500 }
+      );
+    }
+
+    if (!catalogProducts || catalogProducts.length !== productIds.length) {
+      return NextResponse.json(
+        { error: "Uno o más productos no existen en el catálogo." },
+        { status: 400 }
+      );
+    }
+    
+    // Verificar que los precios de Supabase coincidan
+    // con los del catálogo que actualmente utiliza Stripe.
+    
+    
+    for (const catalogProduct of catalogProducts) {
+    const priceInCents = Math.round(
+        Number(catalogProduct.price) * 100
+    );
+
+    if (
+        !Number.isSafeInteger(priceInCents) ||
+        priceInCents <= 0
+    ) {
+        return NextResponse.json(
+        { error: "El producto tiene un precio no válido." },
+        { status: 400 }
+        );
+    }
+
+    if (!catalogProduct.is_active) {
+        return NextResponse.json(
+        {
+            error: `${catalogProduct.name} no está disponible para compra.`,
+        },
+        { status: 409 }
+        );
+    }
+
+    const requestedItem = items.find(
+        (item) => item.productId === catalogProduct.id
+    );
+
+    if (
+        !requestedItem ||
+        !Number.isSafeInteger(requestedItem.quantity) ||
+        requestedItem.quantity < 1 ||
+        requestedItem.quantity > 20
+    ) {
+        return NextResponse.json(
+        { error: "Cantidad no válida." },
+        { status: 400 }
+        );
+    }
+
+    if (
+        !Number.isSafeInteger(catalogProduct.stock) ||
+        catalogProduct.stock < requestedItem.quantity
+    ) {
+        return NextResponse.json(
+        {
+            error: `No hay suficientes existencias de ${catalogProduct.name}.`,
+        },
+        { status: 409 }
+        );
+    }
+    }
+
+
 
     const lineItems = items.map((item) => {
       const product = products.find(
         (p) => p.id === item.productId
       );
+      
+    const catalogProduct = catalogProducts.find(
+        (p) => p.id === item.productId
+    );
 
+    if (!catalogProduct) {
+        throw new Error("Producto no encontrado en Supabase.");
+    }
+    
       if (!product) {
         throw new Error("Producto no válido.");
       }
@@ -106,13 +210,17 @@ export async function POST(request: NextRequest) {
       return {
         price_data: {
           currency: "mxn",
-          product_data: {
-            name: product.name,
+          
+            product_data: {
+            name: catalogProduct.name,
             metadata: {
-                origen_product_id: String(product.id),
+                origen_product_id: String(catalogProduct.id),
             },
-        },
-          unit_amount: Math.round(product.price * 100),
+            },
+
+          
+    unit_amount: Math.round(Number(catalogProduct.price) * 100),
+
         },
         quantity: item.quantity,
       };
@@ -151,6 +259,10 @@ export async function POST(request: NextRequest) {
         })
     )
     .digest("hex");
+    const reservationItems = items.map((item) => ({
+        product_id: item.productId,
+        quantity: item.quantity,
+    }));
     const { data: existingOrder, error: existingOrderError } =
     await supabaseAdmin
         .from("orders")
@@ -171,10 +283,61 @@ export async function POST(request: NextRequest) {
     }
 
     if (existingOrder) {
+        if (
+            existingOrder.checkout_fingerprint !== checkoutFingerprint
+        ) {
+            return NextResponse.json(
+                {
+                    error:
+                        "Este intento de pago corresponde a un carrito o datos de compra diferentes.",
+                },
+                { status: 409 }
+            );
+        }
+        const { data: existingReservations, error: reservationsError } =
+  await supabaseAdmin
+    .from("inventory_reservations")
+    .select("product_id, quantity, status, expires_at")
+    .eq("order_id", existingOrder.id);
+
+if (reservationsError) {
+  console.error(
+    "Error al consultar las reservas:",
+    reservationsError
+  );
+
+  return NextResponse.json(
+    { error: "No se pudo verificar el inventario reservado." },
+    { status: 500 }
+  );
+}
+
+        const reservationsMatch =
+        existingReservations?.length === reservationItems.length &&
+        reservationItems.every((item) =>
+            existingReservations.some(
+            (reservation) =>
+                reservation.product_id === item.product_id &&
+                reservation.quantity === item.quantity &&
+                reservation.status === "reserved" &&
+                new Date(reservation.expires_at).getTime() > Date.now()
+            )
+        );
+
+        if (!reservationsMatch) {
+        return NextResponse.json(
+            {
+            error:
+                "Este pedido no tiene una reserva de inventario válida. Inicia un nuevo intento de compra.",
+            },
+            { status: 409 }
+        );
+        }
         if (!existingOrder.stripe_session_id) {
             const recoveredSession = await stripe.checkout.sessions.create(
                 {
                 mode: "payment",
+                expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
                 metadata: {
                     source: "origen-performance",
                     order_id: existingOrder.id,
@@ -249,6 +412,7 @@ export async function POST(request: NextRequest) {
             { status: 409 }
         );
     }
+   
     const { data: pendingOrder, error: orderError } = await supabaseAdmin
     .from("orders")
     .insert({
@@ -287,8 +451,32 @@ export async function POST(request: NextRequest) {
             { status: 500 }
         );
     }
+    const { error: reservationError } = await supabaseAdmin.rpc(
+        "reserve_inventory_for_order",
+        {
+            p_order_id: pendingOrder.id,
+            p_items: reservationItems,
+        }
+        );
+
+        if (reservationError) {
+        console.error(
+            "Error al reservar inventario:",
+            reservationError
+        );
+
+        return NextResponse.json(
+            {
+            error:
+                "No se pudo reservar el inventario. Verifica la disponibilidad de los productos.",
+            },
+            { status: 409 }
+        );
+    }
+    let stripeSessionCreated = false;
     const session = await stripe.checkout.sessions.create({
         mode: "payment",
+        expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
         metadata: {
             source: "origen-performance",
             order_id: pendingOrder.id,
@@ -300,18 +488,21 @@ export async function POST(request: NextRequest) {
     }, {
     idempotencyKey: idempotencyKey,
     });
-    const { data: linkedOrder, error: sessionError } = await supabaseAdmin
-        .from("orders")
-        .update({
-            stripe_session_id: session.id,
-        })
-        .eq("id", pendingOrder.id)
-        .is("stripe_session_id", null)
-        .eq("payment_status", "pending")
-        .select("id")
-        .maybeSingle();
+    stripeSessionCreated = true;
+    
+    const { error: sessionError } = await supabaseAdmin.rpc(
+        "link_stripe_session_to_order",
+        {
+            p_order_id: pendingOrder.id,
+            p_stripe_session_id: session.id,
+            p_expires_at: new Date(
+            session.expires_at * 1000
+            ).toISOString(),
+        }
+        );
 
-        if (sessionError || !linkedOrder) {
+
+        if (sessionError) {
         console.error(
             "Error al vincular Stripe con el pedido:",
             sessionError

@@ -5,7 +5,7 @@ import AddToCart from "@/components/product/AddToCart";
 import ProductGallery from "@/components/product/ProductGallery";
 import ProductVisual from "@/components/product/ProductVisual";
 import NutritionTable from "@/components/product/NutritionTable";
-import { products } from "@/data/products";
+import { getShopProducts } from "@/lib/get-shop-products";
 
 type ProductPageProps = {
   params: Promise<{
@@ -16,11 +16,15 @@ type ProductPageProps = {
 export default async function ProductPage({
   params,
 }: ProductPageProps) {
+  
   const { id } = await params;
+
+  const products = await getShopProducts();
 
   const product = products.find(
     (item) => item.id === Number(id)
   );
+
 
   if (!product) {
     notFound();

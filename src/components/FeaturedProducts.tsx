@@ -1,10 +1,14 @@
-import { products } from "@/data/products";
+import { getShopProducts } from "@/lib/get-shop-products";
 import QuickAddButton from "@/components/product/QuickAddButton";
 import ProductVisual from "@/components/product/ProductVisual";
 import Link from "next/link";
 
-export default function FeaturedProducts() {
+
+export default async function FeaturedProducts() {
+  const products = await getShopProducts();
+
   return (
+
     <section id="shop" className="bg-[#F2EBDD] px-6 py-24">
       <div className="mx-auto max-w-7xl">
 

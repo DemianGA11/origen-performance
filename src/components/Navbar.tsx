@@ -1,12 +1,44 @@
+
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useCart } from "@/context/CartContext";
+import { supabase } from "@/lib/supabase";
 
 export default function Navbar() {
   const pathname = usePathname();
   const { totalItems } = useCart();
+
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+
+    async function checkSession() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (active) {
+        setIsLoggedIn(Boolean(user));
+      }
+    }
+
+    checkSession();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsLoggedIn(Boolean(session?.user));
+    });
+
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   function isActive(path: string) {
     if (path === "/") {
@@ -75,24 +107,38 @@ export default function Navbar() {
           })}
         </div>
 
-        {/* CARRITO */}
-        <Link
-          href="/cart"
-          className={`flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition ${
-            isActive("/cart")
-              ? "bg-[#68705A] text-white"
-              : "bg-[#20201D] text-[#FAF8F2] hover:opacity-80"
-          }`}
-        >
-          Carrito
+        {/* CUENTA Y CARRITO */}
+        <div className="flex items-center gap-3">
 
-          {totalItems > 0 && (
-            <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-[#F2EBDD] px-1.5 text-xs font-bold text-[#20201D]">
-              {totalItems}
-            </span>
-          )}
-        </Link>
+          <Link
+            href={isLoggedIn ? "/cuenta" : "/login"}
+            className={`rounded-full border px-4 py-2.5 text-sm font-semibold transition ${
+              isActive("/cuenta") || isActive("/login")
+                ? "border-[#68705A] bg-[#68705A]/10 text-[#68705A]"
+                : "border-[#20201D]/20 text-[#20201D] hover:border-[#68705A]"
+            }`}
+          >
+            {isLoggedIn ? "Mi cuenta" : "Iniciar sesión"}
+          </Link>
 
+          <Link
+            href="/cart"
+            className={`flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition ${
+              isActive("/cart")
+                ? "bg-[#68705A] text-white"
+                : "bg-[#20201D] text-[#FAF8F2] hover:opacity-80"
+            }`}
+          >
+            Carrito
+
+            {totalItems > 0 && (
+              <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-[#F2EBDD] px-1.5 text-xs font-bold text-[#20201D]">
+                {totalItems}
+              </span>
+            )}
+          </Link>
+
+        </div>
       </nav>
     </header>
   );
