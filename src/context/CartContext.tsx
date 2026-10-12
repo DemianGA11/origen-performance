@@ -21,6 +21,9 @@ type CartContextType = {
   removeFromCart: (productId: number) => void;
   updateQuantity: (productId: number, quantity: number) => void;
   clearCart: () => void;
+  removePurchasedItems: (
+    purchasedItems: { productId: number; quantity: number }[]
+  ) => void;
   totalItems: number;
   subtotal: number;
 };
@@ -37,18 +40,24 @@ export function CartProvider({
   const [items, setItems] = useState<CartItem[]>([]);
   const [hasLoaded, setHasLoaded] = useState(false);
   useEffect(() => {
-    const storedCart = localStorage.getItem("origen-cart");
+    const loadCart = () => {
+      const storedCart = localStorage.getItem("origen-cart");
 
-    if (storedCart) {
-      try {
-        const parsedCart = JSON.parse(storedCart);
-        setItems(parsedCart);
-      } catch {
-        localStorage.removeItem("origen-cart");
+      if (storedCart) {
+        try {
+          const parsedCart = JSON.parse(storedCart);
+          setItems(parsedCart);
+        } catch {
+          localStorage.removeItem("origen-cart");
+        }
       }
-    }
 
-    setHasLoaded(true);
+      setHasLoaded(true);
+    };
+
+    const timeoutId = window.setTimeout(loadCart, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, []);
   useEffect(() => {
     if (!hasLoaded) return;
@@ -115,6 +124,26 @@ export function CartProvider({
   function clearCart() {
     setItems([]);
   }
+    function removePurchasedItems(
+    purchasedItems: { productId: number; quantity: number }[]
+  ) {
+    setItems((currentItems) =>
+      currentItems
+        .map((item) => {
+          const purchased = purchasedItems.find(
+            (p) => p.productId === item.product.id
+          );
+
+          if (!purchased) return item;
+
+          return {
+            ...item,
+            quantity: Math.max(0, item.quantity - purchased.quantity),
+          };
+        })
+        .filter((item) => item.quantity > 0)
+    );
+  }
 
   const totalItems = items.reduce(
     (total, item) => total + item.quantity,
@@ -129,14 +158,15 @@ export function CartProvider({
 
   return (
     <CartContext.Provider
-      value={{
-        items,
-        addToCart,
-        removeFromCart,
-        updateQuantity,
-        clearCart,
-        totalItems,
-        subtotal,
+        value={{
+          items,
+          addToCart,
+          removeFromCart,
+          updateQuantity,
+          clearCart,
+          removePurchasedItems,
+          totalItems,
+          subtotal,
       }}
     >
       {children}

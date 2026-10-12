@@ -7,7 +7,6 @@ import { products } from "@/data/products";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import ProductVisual from "@/components/product/ProductVisual";
-import ProductGallery from "@/components/product/ProductGallery";
 function ShopContent() {
   const router = useRouter();
   const searchParams = useSearchParams();

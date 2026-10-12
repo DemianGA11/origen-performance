@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import { useCart } from "@/context/CartContext";
 
 export default function CheckoutPage() {
-  const { items, subtotal, totalItems, clearCart } = useCart();
+  const { items } = useCart();
   const [formData, setFormData] = useState({
         firstName: "",
         lastName: "",
@@ -17,6 +17,9 @@ export default function CheckoutPage() {
         city: "",
         state: "",
     });
+    const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+    const checkoutInProgress = useRef(false);
+    const checkoutAttemptId = useRef<string | null>(null);
     const [checkoutStep, setCheckoutStep] = useState<
         "shipping" | "payment" | "review" | "confirmed"
     >("shipping");
@@ -25,7 +28,7 @@ export default function CheckoutPage() {
     >(null);
 
     //const [orderNumber, setOrderNumber] = useState("");
-    const [confirmedOrder, setConfirmedOrder] = useState<{
+    const [confirmedOrder] = useState<{
         orderNumber: string;
         total: number;
         itemCount: number;
@@ -184,26 +187,127 @@ export default function CheckoutPage() {
       </main>
     );
   }
-    function handleConfirmOrder() {
-        if (!paymentMethod) return;
+    async function handleConfirmOrder() {
+        if (
+            checkoutInProgress.current ||
+            paymentMethod !== "card" ||
+            !isFormComplete ||
+            items.length === 0
+        ) {
+            return;
+        }
 
-        const randomCode = Math.random()
-            .toString(36)
-            .substring(2, 8)
-            .toUpperCase();
+        checkoutInProgress.current = true;
+        setIsProcessingPayment(true);
+        if (!checkoutAttemptId.current) {
+            checkoutAttemptId.current = crypto.randomUUID();
+        }
+        const checkoutSnapshotKey =
+        `origen-checkout-${checkoutAttemptId.current}`;
 
-        const newOrderNumber = `ORG-${randomCode}`;
+        if (!sessionStorage.getItem(checkoutSnapshotKey)) {
+        sessionStorage.setItem(
+            checkoutSnapshotKey,
+            JSON.stringify(
+            items.map((item) => ({
+                productId: item.product.id,
+                quantity: item.quantity,
+            }))
+            )
+        );
+        }
+        try {
+            const response = await fetch("/api/checkout", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Idempotency-Key": checkoutAttemptId.current!,
+            },
+            body: JSON.stringify({
+                items: items.map((item) => ({
+                productId: item.product.id,
+                quantity: item.quantity,
+                })),
 
+                customer: {
+                firstName: formData.firstName,
+                lastName: formData.lastName,
+                email: formData.email,
+                phone: formData.phone,
+                },
 
-        setConfirmedOrder({
-            orderNumber: newOrderNumber,
-            total: subtotal,
-            itemCount: totalItems,
-            paymentMethod,
-        });
+                shipping: {
+                address: formData.address,
+                city: formData.city,
+                state: formData.state,
+                postalCode: formData.postalCode,
+                },
+            }),
+            });
 
-        setCheckoutStep("confirmed");
-        clearCart();
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => null);
+
+                throw new Error(
+                    typeof errorData?.error === "string"
+                    ? errorData.error
+                    : "No se pudo iniciar el pago."
+                );
+            }
+
+            const data = await response.json();
+
+            if (typeof data.url !== "string") {
+                throw new Error("Stripe no devolvió una URL válida.");
+            }
+
+            const stripeUrl = new URL(data.url);
+
+            if (
+                typeof data.sessionId !== "string" ||
+                !data.sessionId.startsWith("cs_test_")
+            ) {
+            throw new Error(
+                    "Stripe no devolvió un identificador de sesión válido."
+                );
+                }
+
+                if (checkoutAttemptId.current) {
+                    const snapshot = sessionStorage.getItem(
+                        `origen-checkout-${checkoutAttemptId.current}`
+                );
+
+                if (snapshot) {
+                    sessionStorage.setItem(
+                    `origen-session-${data.sessionId}`,
+                    snapshot
+                    );
+                }
+                }
+
+            window.location.assign(data.url);
+        } catch (error) {
+            checkoutInProgress.current = false;
+            setIsProcessingPayment(false);
+
+            console.error("Error al iniciar Stripe Checkout:", error);
+
+            const message =
+                error instanceof Error
+                ? error.message
+                : "No pudimos iniciar el pago. Inténtalo nuevamente.";
+
+            if (message.includes("Los datos de la compra cambiaron")) {
+                alert(
+                "Modificaste los datos de tu compra después de iniciar el pago. " +
+                "Para evitar pedidos duplicados, necesitamos comenzar un nuevo intento."
+                );
+
+                return;
+            }
+
+            alert(message);
+        }
     }
   return (
     <main className="min-h-screen bg-[#F2EBDD] text-[#20201D]">
@@ -493,7 +597,7 @@ export default function CheckoutPage() {
 
                     <button
                         type="button"
-                        onClick={() => setPaymentMethod("transfer")}
+                        disabled
                         className={`w-full rounded-2xl border p-5 text-left transition ${
                         paymentMethod === "transfer"
                             ? "border-[#20201D] bg-[#20201D] text-[#FAF8F2]"
@@ -511,7 +615,7 @@ export default function CheckoutPage() {
                                 : "text-[#20201D]/50"
                             }`}
                             >
-                            Simulación de transferencia SPEI.
+                            Próximamente disponible.
                             </p>
                         </div>
 
@@ -620,11 +724,12 @@ export default function CheckoutPage() {
             </div>
 
             <button
-            type="button"
-            onClick={handleConfirmOrder}
-            className="mt-8 w-full rounded-full bg-[#68705A] px-7 py-4 font-semibold text-white transition hover:opacity-80"
-            >
-            Confirmar pedido →
+                type="button"
+                onClick={handleConfirmOrder}
+                disabled={isProcessingPayment}
+                className="mt-8 w-full rounded-full bg-[#68705A] px-7 py-4 font-semibold text-white transition hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                {isProcessingPayment ? "Procesando pago..." : "Confirmar pedido →"}
             </button>
 
             <p className="mt-4 text-center text-xs text-[#20201D]/40">

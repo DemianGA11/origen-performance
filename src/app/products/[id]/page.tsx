@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import AddToCart from "@/components/product/AddToCart";
 import ProductGallery from "@/components/product/ProductGallery";
+import ProductVisual from "@/components/product/ProductVisual";
+import NutritionTable from "@/components/product/NutritionTable";
 import { products } from "@/data/products";
 
 type ProductPageProps = {
@@ -23,6 +25,15 @@ export default async function ProductPage({
   if (!product) {
     notFound();
   }
+  const relatedProducts = products
+    .filter((item) => item.id !== product.id)
+    .sort((a, b) => {
+      const aMatches = a.goal === product.goal ? 1 : 0;
+      const bMatches = b.goal === product.goal ? 1 : 0;
+
+    return bMatches - aMatches;
+  })
+  .slice(0, 3);
 
   return (
     <main className="min-h-screen bg-[#FAF8F2] text-[#20201D]">
@@ -171,12 +182,13 @@ export default async function ProductPage({
 
       <section className="bg-[#F2EBDD] px-6 py-24">
         <div className="mx-auto max-w-7xl">
+          <div className="mx-auto max-w-2xl">
 
           <p className="mb-4 text-sm font-semibold tracking-[0.25em] text-[#68705A]">
             TRANSPARENCIA
           </p>
 
-          <h2 className="text-4xl font-bold">
+          <h2 className="text-center text-4xl font-bold">
             Lo que contiene.
           </h2>
 
@@ -198,10 +210,116 @@ export default async function ProductPage({
             ))}
 
           </div>
+          <div className="mx-auto mt-14 max-w-2xl">
+            <h3 className="mb-6 text-2xl font-bold">
+              Información nutrimental
+            </h3>
+            <NutritionTable nutrition={product.nutrition} />
+            
+            {((product.allergens?.length ?? 0) > 0 ||
+              (product.warnings?.length ?? 0) > 0) && (
+              <div className="mt-6 space-y-4">
 
+                {(product.allergens?.length ?? 0) > 0 && (
+                  <div className="rounded-2xl border border-[#B76D4B]/30 bg-[#B76D4B]/10 p-5">
+                    <h4 className="font-bold text-[#20201D]">
+                      Información de alérgenos
+                    </h4>
+
+                    {product.allergens?.map((allergen) => (
+                      <p
+                        key={allergen}
+                        className="mt-2 text-sm leading-6 text-[#20201D]/75"
+                      >
+                        {allergen}
+                      </p>
+                    ))}
+                  </div>
+                )}
+
+                {(product.warnings?.length ?? 0) > 0 && (
+                  <div className="rounded-2xl border border-[#20201D]/15 bg-white/70 p-5">
+                    <h4 className="font-bold text-[#20201D]">
+                      Información importante
+                    </h4>
+
+                    {product.warnings?.map((warning) => (
+                      <p
+                        key={warning}
+                        className="mt-2 text-sm leading-6 text-[#20201D]/75"
+                      >
+                        {warning}
+                      </p>
+                    ))}
+                  </div>
+                )}
+
+              </div>
+            )}
+
+          </div>
+        </div>
         </div>
       </section>
+    {/* PRODUCTOS RELACIONADOS */}
+    <section className="bg-[#FAF8F2] px-6 py-24">
+      <div className="mx-auto max-w-7xl">
 
+        <div className="mb-10">
+          <p className="mb-3 text-xs font-bold tracking-[0.2em] text-[#68705A]">
+            DESCUBRE MÁS
+          </p>
+
+          <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
+            Continúa tu rendimiento.
+          </h2>
+
+          <p className="mt-3 text-[#20201D]/60">
+            Explora otros productos de nuestra selección.
+          </p>
+        </div>
+
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {relatedProducts.map((item) => (
+            <Link
+              key={item.id}
+              href={`/products/${item.id}`}
+              className="group overflow-hidden rounded-3xl border border-[#20201D]/10 bg-white transition duration-300 hover:-translate-y-1 hover:shadow-lg"
+            >
+              <div className="aspect-square overflow-hidden bg-[#F2EBDD]">
+                <ProductVisual product={item} />
+              </div>
+
+              <div className="p-6">
+                <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#68705A]">
+                  {item.category}
+                </p>
+
+                <h3 className="mt-2 text-xl font-bold">
+                  {item.name}
+                </h3>
+
+                <p className="mt-2 text-sm text-[#20201D]/50">
+                  {item.size}
+                </p>
+
+                <div className="mt-6 flex items-center justify-between">
+                  <span className="text-lg font-bold">
+                    ${item.price} MXN
+                  </span>
+
+                  <span className="text-sm font-semibold text-[#68705A] transition group-hover:translate-x-1">
+                    Explorar →
+                  </span>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+
+      </div>
+      
+    </section>
     </main>
   );
 }

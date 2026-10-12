@@ -1,3 +1,7 @@
+export type NutritionItem = {
+  label: string;
+  amount: string;
+};
 export type Product = {
   id: number;
   name: string;
@@ -12,6 +16,13 @@ export type Product = {
   size: string;
   ingredients: string[];
   verifiedReasons: string[];
+  allergens?: string[];
+  warnings?: string[];
+  nutrition: {
+    servingSize: string;
+    servingsPerContainer: string;
+    items: NutritionItem[];
+  } | null;
   
   
 };
@@ -37,12 +48,25 @@ export const products: Product[] = [
     goal: ["BUILD"],
     size: "300 g · 60 porciones",
     ingredients: ["Creatina monohidratada"],
+  
     verifiedReasons: [
       "Fórmula de un solo ingrediente.",
       "Sin mezclas propietarias.",
       "Composición y cantidad claramente declaradas.",
       "Propósito de uso claramente definido.",
     ],
+    
+    nutrition: {
+      servingSize: "5 g",
+      servingsPerContainer: "60",
+      items: [
+        {
+          label: "Monohidrato de creatina",
+          amount: "5 g",
+        },
+      ],
+    },
+
   },
   {
     id: 2,
@@ -63,16 +87,51 @@ export const products: Product[] = [
     goal: ["BUILD", "RECOVER"],
     size: "900 g · 30 porciones",
     ingredients: [
-      "Proteína de suero de leche",
-      "Sabor natural",
-      "Lecitina",
+      "Aislado de proteína de suero de leche de vacas alimentadas con pasto",
     ],
+    allergens: ["Contiene leche."],
     verifiedReasons: [
       "Fuente de proteína claramente identificada.",
       "Lista de ingredientes sencilla.",
       "Sin mezclas propietarias.",
       "Información transparente de formulación.",
     ],
+    
+    nutrition: {
+      servingSize: "30 g",
+      servingsPerContainer: "30",
+      items: [
+        {
+          label: "Energía",
+          amount: "120 kcal",
+        },
+        {
+          label: "Proteínas",
+          amount: "24 g",
+        },
+        {
+          label: "Grasas totales",
+          amount: "2 g",
+        },
+        {
+          label: "Grasas saturadas",
+          amount: "1 g",
+        },
+        {
+          label: "Carbohidratos",
+          amount: "1.5 g",
+        },
+        {
+          label: "Azúcares totales",
+          amount: "1 g",
+        },
+        {
+          label: "Sodio",
+          amount: "120 mg",
+        },
+      ],
+    },
+
   },
   {
     id: 3,
@@ -92,11 +151,16 @@ export const products: Product[] = [
     verified: true,
     goal: ["ENDURE", "RECOVER"],
     size: "30 porciones",
+    
     ingredients: [
-      "Sodio",
-      "Potasio",
-      "Magnesio",
-      "Sabor natural",
+      "Sal de mar",
+      "Ácido cítrico",
+      "Sal rosa del Himalaya",
+      "Saborizante natural",
+      "Glicinato de magnesio",
+      "Cloruro de potasio",
+      "Extracto de stevia",
+      "Extracto de monk fruit",
     ],
     verifiedReasons: [
       "Minerales y cantidades claramente identificados.",
@@ -104,6 +168,58 @@ export const products: Product[] = [
       "Formulación enfocada en hidratación.",
       "Uso contextual claramente explicado.",
     ],
+    
+    nutrition: {
+      servingSize: "1 sobre (4.14 g)",
+      servingsPerContainer: "30",
+      items: [
+        {
+          label: "Energía",
+          amount: "4 kcal (17 kJ)",
+        },
+        {
+          label: "Grasas totales",
+          amount: "0 g",
+        },
+        {
+          label: "Grasas saturadas",
+          amount: "0 g",
+        },
+        {
+          label: "Grasas trans",
+          amount: "0 g",
+        },
+        {
+          label: "Carbohidratos",
+          amount: "1 g",
+        },
+        {
+          label: "Azúcares totales",
+          amount: "0 g",
+        },
+        {
+          label: "Azúcares añadidos",
+          amount: "0 g",
+        },
+        {
+          label: "Proteínas",
+          amount: "0 g",
+        },
+        {
+          label: "Sodio",
+          amount: "1,000 mg",
+        },
+        {
+          label: "Potasio",
+          amount: "200 mg",
+        },
+        {
+          label: "Magnesio",
+          amount: "60 mg",
+        },
+      ],
+    },
+
   },
   {
     id: 4,
@@ -123,18 +239,54 @@ export const products: Product[] = [
     verified: true,
     goal: ["NOURISH"],
     size: "60 cápsulas",
+    
     ingredients: [
       "Aceite de pescado",
-      "EPA",
-      "DHA",
-      "Cápsula de gelatina",
+      "Gelatina de pescado (cápsula blanda)",
+      "Glicerina",
+      "Agua",
+      "Mezcla de tocoferoles (antioxidante)",
     ],
+    allergens: ["Contiene pescado."],
+
     verifiedReasons: [
       "Contenido de EPA y DHA declarado.",
       "Fuente claramente identificada.",
       "Composición transparente.",
       "Enfoque complementario a la alimentación.",
     ],
+    
+    nutrition: {
+      servingSize: "2 cápsulas",
+      servingsPerContainer: "30",
+      items: [
+        {
+          label: "Aceite de pescado",
+          amount: "2,000 mg",
+        },
+        {
+          label: "EPA",
+          amount: "360 mg",
+        },
+        {
+          label: "DHA",
+          amount: "240 mg",
+        },
+        {
+          label: "EPA + DHA",
+          amount: "600 mg",
+        },
+        {
+          label: "Energía",
+          amount: "18 kcal (75 kJ)",
+        },
+        {
+          label: "Grasas totales",
+          amount: "2 g",
+        },
+      ],
+    },
+
   },
   {
   id: 5,
@@ -154,14 +306,66 @@ export const products: Product[] = [
   verified: true,
   goal: ["BUILD", "RECOVER", "NOURISH"],
   size: "60 g · 1 barra",
-  ingredients: [
-    "Proteína de suero de leche",
-    "Miel",
-    "Cacao",
-    "Manteca de cacao",
-    "Colágeno hidrolizado",
-    "Sal de mar",
-  ],
+  
+    ingredients: [
+      "Proteína de suero de leche grass-fed",
+      "Colágeno bovino",
+      "Néctar de coco",
+      "Grasa bovina",
+      "Cacao en polvo",
+      "Miel",
+      "Trozos de cacao",
+      "Sal",
+    ],
+    allergens: ["Contiene leche."],
+  
+  nutrition: {
+    servingSize: "1 barra (60 g)",
+    servingsPerContainer: "1",
+    items: [
+      {
+        label: "Energía",
+        amount: "206 kcal (862 kJ)",
+      },
+      {
+        label: "Proteínas",
+        amount: "20 g",
+      },
+      {
+        label: "Grasas totales",
+        amount: "6 g",
+      },
+      {
+        label: "Grasas saturadas",
+        amount: "3.6 g",
+      },
+      {
+        label: "Grasas trans",
+        amount: "0 g",
+      },
+      {
+        label: "Carbohidratos disponibles",
+        amount: "18 g",
+      },
+      {
+        label: "Azúcares totales",
+        amount: "14 g",
+      },
+      {
+        label: "Azúcares añadidos",
+        amount: "14 g",
+      },
+      {
+        label: "Fibra dietética",
+        amount: "4 g",
+      },
+      {
+        label: "Sodio",
+        amount: "278 mg",
+      },
+    ],
+  },
+
   verifiedReasons: [
     "Proteína de suero como fuente principal de proteína",
     "Lista corta de ingredientes reconocibles",
@@ -188,14 +392,18 @@ export const products: Product[] = [
   verified: true,
   goal: ["BUILD", "ENDURE"],
   size: "300 g · 30 porciones",
+    
   ingredients: [
-    "Concentrado de betabel estandarizado en nitratos",
-    "Extracto de granada",
-    "Sodio",
-    "Potasio",
+    "Extracto de betabel estandarizado en nitratos",
+    "Extracto de granada rico en polifenoles",
+    "Mezcla de electrolitos",
     "Cafeína",
-    "Sabor natural",
   ],
+  warnings: [
+    "Contiene cafeína. Cantidad pendiente de definir.",
+    "Formulación conceptual no disponible para comercialización.",
+  ],
+
   verifiedReasons: [
     "Fuente de nitratos de origen vegetal",
     "Ingredientes seleccionados con un propósito definido",
@@ -203,5 +411,57 @@ export const products: Product[] = [
     "Contenido de cafeína declarado",
     "Formulación enfocada en rendimiento sin ingredientes innecesarios",
   ],
+  
+  nutrition: {
+    servingSize: "10 g",
+    servingsPerContainer: "30",
+    items: [
+      {
+        label: "Energía",
+        amount: "Por definir",
+      },
+      {
+        label: "Proteínas",
+        amount: "Por definir",
+      },
+      {
+        label: "Grasas totales",
+        amount: "Por definir",
+      },
+      {
+        label: "Carbohidratos",
+        amount: "Por definir",
+      },
+      {
+        label: "Azúcares totales",
+        amount: "Por definir",
+      },
+      {
+        label: "Sodio",
+        amount: "Por definir",
+      },
+      {
+        label: "Potasio",
+        amount: "Por definir",
+      },
+      {
+        label: "Magnesio",
+        amount: "Por definir",
+      },
+      {
+        label: "Nitratos de betabel",
+        amount: "Por definir",
+      },
+      {
+        label: "Polifenoles de granada",
+        amount: "Por definir",
+      },
+      {
+        label: "Cafeína",
+        amount: "Por definir",
+      },
+    ],
+  },
+
 },
 ];
