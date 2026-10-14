@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
-import { products } from "@/data/products";
 
 type CheckoutCatalogProduct = {
   id: number;
@@ -87,8 +86,7 @@ export async function POST(request: NextRequest) {
         );
     }
     
-    // Consultar el catálogo de Supabase.
-    // Por ahora, esta consulta no modifica el checkout.
+    // Supabase es la fuente del catálogo disponible para checkout.
     const { data: catalogProducts, error: catalogError } =
       await supabaseAdmin
         .from("products")
@@ -115,8 +113,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Verificar que los precios de Supabase coincidan
-    // con los del catálogo que actualmente utiliza Stripe.
+    // Validar precio, disponibilidad y existencias antes de preparar el pago.
     
     
     for (const catalogProduct of catalogProducts) {
@@ -175,10 +172,6 @@ export async function POST(request: NextRequest) {
 
 
     const lineItems = items.map((item) => {
-      const product = products.find(
-        (p) => p.id === item.productId
-      );
-      
     const catalogProduct = catalogProducts.find(
         (p) => p.id === item.productId
     );
@@ -187,10 +180,6 @@ export async function POST(request: NextRequest) {
         throw new Error("Producto no encontrado en Supabase.");
     }
     
-      if (!product) {
-        throw new Error("Producto no válido.");
-      }
-
       if (
         !Number.isSafeInteger(item.quantity) ||
         item.quantity < 1 ||
@@ -201,7 +190,7 @@ export async function POST(request: NextRequest) {
 
       // No permitir vender productos cuya formulación
       // todavía no está definida.
-      if (product.id === 6) {
+      if (catalogProduct.id === 6) {
         throw new Error(
           "Pre-Performance todavía no está disponible para compra."
         );
