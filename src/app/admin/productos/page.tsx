@@ -45,15 +45,26 @@ export default async function AdminProductosPage() {
         ← Volver al panel
       </Link>
 
-      <div className="mt-8 mb-8">
-        <h1 className="text-3xl font-semibold text-[#20201D]">
-          Productos
-        </h1>
+      
+      <div className="mt-8 mb-8 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-semibold text-[#20201D]">
+            Productos
+          </h1>
 
-        <p className="mt-2 text-[#68705A]">
-          Administra el catálogo de ORIGEN PERFORMANCE.
-        </p>
+          <p className="mt-2 text-[#68705A]">
+            Administra el catálogo de ORIGEN PERFORMANCE.
+          </p>
+        </div>
+
+        <Link
+          href="/admin/productos/nuevo"
+          className="inline-flex items-center justify-center rounded-full bg-[#20201D] px-6 py-3 text-sm font-semibold text-[#FAF8F2] transition-colors hover:bg-[#68705A]"
+        >
+          + Agregar producto
+        </Link>
       </div>
+
 
       <div className="mb-6 rounded-xl border border-[#DDD8CC] bg-white p-5">
         <p className="text-sm text-[#68705A]">
@@ -129,8 +140,9 @@ export default async function AdminProductosPage() {
       </div>
 
       <p className="mt-5 text-sm text-[#68705A]">
-        Los cambios realizados en esta base de datos todavía no
-        afectan los precios ni la disponibilidad de Stripe Checkout.
+        Los productos y precios se obtienen de Supabase.
+        La disponibilidad de compra depende del estado del producto
+        y de sus existencias.
       </p>
     </main>
   );
