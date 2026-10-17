@@ -34,6 +34,8 @@ export function mapDatabaseProduct(
     description: product.description,
     longDescription: product.long_description,
     price: Number(product.price),
+    is_active: product.is_active,
+    stock: product.stock,
     verified: product.verified,
     goal: product.goal,
     size: product.size,

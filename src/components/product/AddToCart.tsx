@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Product } from "@/data/products";
 import { useCart } from "@/context/CartContext";
+import { getProductAvailability } from "@/lib/product-availability";
 
 type AddToCartProps = {
   product: Product;
@@ -15,6 +16,7 @@ export default function AddToCart({
   const [added, setAdded] = useState(false);
 
   const { addToCart } = useCart();
+  const availability = getProductAvailability(product);
 
   function decreaseQuantity() {
     setQuantity((current) => Math.max(1, current - 1));
@@ -25,6 +27,7 @@ export default function AddToCart({
 }
 
   function handleAddToCart() {
+    if (!availability.canPurchase) return;
     addToCart(product, quantity);
 
     setAdded(true);
@@ -41,6 +44,7 @@ export default function AddToCart({
         <div className="flex items-center rounded-full border border-[#20201D]/15">
           <button
             onClick={decreaseQuantity}
+            disabled={!availability.canPurchase}
             className="px-5 py-4 text-lg"
             aria-label="Disminuir cantidad"
           >
@@ -53,6 +57,7 @@ export default function AddToCart({
 
           <button
             onClick={increaseQuantity}
+            disabled={!availability.canPurchase}
             className="px-5 py-4 text-lg"
             aria-label="Aumentar cantidad"
           >
@@ -62,13 +67,14 @@ export default function AddToCart({
 
         <button
           onClick={handleAddToCart}
-          className={`flex-1 rounded-full px-8 py-4 font-semibold transition ${
+          disabled={!availability.canPurchase}
+          className={`flex-1 rounded-full px-8 py-4 font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
             added
               ? "bg-[#68705A] text-white"
               : "bg-[#20201D] text-[#FAF8F2] hover:scale-[1.01]"
           }`}
         >
-          {added ? "✓ Agregado al carrito" : "Agregar al carrito"}
+          {!availability.canPurchase ? availability.label : added ? "✓ Agregado al carrito" : "Agregar al carrito"}
         </button>
 
       </div>

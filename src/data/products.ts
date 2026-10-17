@@ -11,6 +11,10 @@ export type Product = {
   description: string;
   longDescription: string;
   price: number;
+  // Opcionales para conservar compatibilidad con carritos guardados antes
+  // de incorporar disponibilidad. Su ausencia no confirma disponibilidad.
+  is_active?: boolean;
+  stock?: number;
   verified: boolean;
   goal: string[];
   size: string;
