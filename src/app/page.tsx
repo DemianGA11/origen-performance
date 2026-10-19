@@ -2,6 +2,8 @@ import Navbar from "@/components/Navbar";
 import GoalCards from "@/components/GoalCards";
 import FeaturedProducts from "@/components/FeaturedProducts";
 import Link from "next/link";
+export const dynamic = "force-dynamic";
+
 export default function Home() {
   return (
     <main className="min-h-screen bg-[#F2EBDD] text-[#20201D]">

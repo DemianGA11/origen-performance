@@ -7,6 +7,8 @@ import ProductVisual from "@/components/product/ProductVisual";
 import NutritionTable from "@/components/product/NutritionTable";
 import { getShopProducts } from "@/lib/get-shop-products";
 
+export const dynamic = "force-dynamic";
+
 type ProductPageProps = {
   params: Promise<{
     id: string;

@@ -3,6 +3,8 @@ import { Suspense } from "react";
 import ShopContent from "./ShopContent";
 import { getShopProducts } from "@/lib/get-shop-products";
 
+export const dynamic = "force-dynamic";
+
 export default async function ShopPage() {
   const products = await getShopProducts();
 
