@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import { useCart } from "@/context/CartContext";
+import ProductVisual from "@/components/product/ProductVisual";
 
 export default function CartPage() {
   const {
@@ -58,11 +59,7 @@ export default function CartPage() {
                   >
 
                     <div className="flex h-28 w-24 shrink-0 items-center justify-center rounded-2xl bg-[#F2EBDD]">
-                      <span className="text-center text-[9px] font-bold tracking-[0.12em]">
-                        ORIGEN
-                        <br />
-                        {item.product.category}
-                      </span>
+                      <ProductVisual product={item.product} />
                     </div>
 
                     <div className="flex flex-1 flex-col justify-between">

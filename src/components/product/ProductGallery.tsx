@@ -4,6 +4,8 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import type { Product } from "@/data/products";
+import { getProductImages } from "@/lib/product-images";
+import ProductImagePlaceholder from "./ProductImagePlaceholder";
 
 type ProductGalleryProps = {
   product: Product;
@@ -15,17 +17,16 @@ export default function ProductGallery({
   const [activeIndex, setActiveIndex] = useState(0);
   const [isZoomOpen, setIsZoomOpen] = useState(false);
 
-    const images = product.images;
-    const mainImage = images[activeIndex];
+    const images = getProductImages(product.images);
+    const visibleIndex = Math.min(activeIndex, Math.max(0, images.length - 1));
+    const mainImage = images[visibleIndex];
 
     function nextImage() {
-    setActiveIndex((current) => (current + 1) % images.length);
+    if (images.length > 1) setActiveIndex((visibleIndex + 1) % images.length);
     }
 
     function previousImage() {
-    setActiveIndex(
-        (current) => (current - 1 + images.length) % images.length
-    );
+    if (images.length > 1) setActiveIndex((visibleIndex - 1 + images.length) % images.length);
     }
     useEffect(() => {
         if (!isZoomOpen) return;
@@ -47,7 +48,7 @@ export default function ProductGallery({
     <div className="relative aspect-square w-full overflow-hidden rounded-[2rem] bg-[#F2EBDD]">
 
       {/* Imagen principal */}
-      <button
+      {mainImage ? <button
         type="button"
         onClick={() => setIsZoomOpen(true)}
         aria-label={`Ampliar fotografía de ${product.name}`}
@@ -58,10 +59,10 @@ export default function ProductGallery({
             alt={`Presentación de ${product.name}`}
             fill
             sizes="(max-width: 1024px) 100vw, 50vw"
-            loading={activeIndex === 0 ? "eager" : "lazy"}
+            loading={visibleIndex === 0 ? "eager" : "lazy"}
             className="object-contain"
         />
-        </button>
+        </button> : <ProductImagePlaceholder name={product.name} />}
 
       {/* Etiqueta ORIGEN VERIFIED */}
       {product.verified && (
@@ -94,9 +95,9 @@ export default function ProductGallery({
       )}
 
             {/* Contador de imágenes */}
-      <span className="absolute bottom-5 right-5 z-10 rounded-full bg-white/90 px-3 py-1.5 text-xs font-semibold text-[#20201D]">
-        {activeIndex + 1} / {images.length}
-      </span>
+      {mainImage && <span className="absolute bottom-5 right-5 z-10 rounded-full bg-white/90 px-3 py-1.5 text-xs font-semibold text-[#20201D]">
+        {visibleIndex + 1} / {images.length}
+      </span>}
 
     </div>
 
@@ -109,9 +110,9 @@ export default function ProductGallery({
             type="button"
             onClick={() => setActiveIndex(index)}
             aria-label={`Ver imagen ${index + 1} de ${product.name}`}
-            aria-pressed={activeIndex === index}
+            aria-pressed={visibleIndex === index}
             className={`relative aspect-square overflow-hidden rounded-2xl border-2 transition duration-200 ${
-              activeIndex === index
+              visibleIndex === index
                 ? "border-[#68705A] shadow-md"
                 : "border-transparent opacity-70 hover:opacity-100"
             }`}
@@ -125,7 +126,7 @@ export default function ProductGallery({
             />
 
             {/* Indicador de imagen seleccionada */}
-            {activeIndex === index && (
+            {visibleIndex === index && (
               <span className="absolute bottom-0 left-0 h-1 w-full bg-[#68705A]" />
             )}
           </button>
@@ -133,7 +134,7 @@ export default function ProductGallery({
       </div>
     )}
     {/* Visor de imágenes ampliadas */}
-    {isZoomOpen && createPortal(
+    {isZoomOpen && mainImage && createPortal(
     <div
         role="dialog"
         aria-modal="true"
@@ -154,7 +155,7 @@ export default function ProductGallery({
         <div className="relative h-[85vh] w-full max-w-5xl">
         <Image
             src={mainImage}
-            alt={`${product.name} - Imagen ampliada ${activeIndex + 1}`}
+            alt={`${product.name} - Imagen ampliada ${visibleIndex + 1}`}
             fill
             sizes="100vw"
             className="object-contain"
@@ -186,7 +187,7 @@ export default function ProductGallery({
 
         {/* Contador */}
         <span className="absolute bottom-5 left-1/2 z-30 -translate-x-1/2 rounded-full bg-white/15 px-5 py-2 text-sm font-semibold text-white">
-        {activeIndex + 1} / {images.length}
+        {visibleIndex + 1} / {images.length}
         </span>
     </div>,
     document.body
