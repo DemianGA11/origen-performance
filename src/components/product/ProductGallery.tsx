@@ -42,6 +42,10 @@ export default function ProductGallery({
             window.removeEventListener("keydown", handleKeyDown);
         };
         }, [isZoomOpen]);
+  if (!mainImage) {
+    return <div className="flex aspect-square items-center justify-center rounded-[2rem] bg-[#F2EBDD] p-6 text-center text-sm text-[#68705A]">Fotografía pendiente</div>;
+  }
+
   return (
   <div className="w-full">
     <div className="relative aspect-square w-full overflow-hidden rounded-[2rem] bg-[#F2EBDD]">

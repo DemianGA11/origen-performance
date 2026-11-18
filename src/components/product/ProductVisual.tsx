@@ -10,6 +10,10 @@ export default function ProductVisual({
 }: ProductVisualProps) {
   const mainImage = product.images[0];
 
+  if (!mainImage) {
+    return <div className="flex h-full w-full items-center justify-center p-6 text-center text-sm text-[#68705A]">Fotografía pendiente</div>;
+  }
+
   return (
     <div className="relative h-full w-full overflow-hidden">
 

@@ -4,15 +4,17 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import QuickAddButton from "@/components/product/QuickAddButton";
 import type { Product } from "@/data/products";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import { useRef, useState } from "react";
+import { filterCatalogProducts } from "@/lib/catalog-filters";
 import ProductVisual from "@/components/product/ProductVisual";
 export default function ShopContent({
   products,
 }: {
   products: Product[];
 }) {
-  const router = useRouter();
+  const [query, setQuery] = useState("");
+  const searchInput = useRef<HTMLInputElement>(null);
   const searchParams = useSearchParams();
 
   const goals = ["ALL", "BUILD", "ENDURE", "RECOVER", "NOURISH"];
@@ -25,19 +27,25 @@ export default function ShopContent({
       : "ALL";
 
   function handleGoalChange(goal: string) {
-    if (goal === "ALL") {
-      router.push("/shop");
-    } else {
-      router.push(`/shop?goal=${goal}`);
-    }
+    const params = new URLSearchParams(searchParams.toString());
+    if (goal === "ALL") params.delete("goal");
+    else params.set("goal", goal);
+    const suffix = params.toString();
+    // Next syncs useSearchParams with native history, without an RSC request.
+    window.history.pushState(null, "", suffix ? `/shop?${suffix}` : "/shop");
   }
 
-  const filteredProducts =
-    activeGoal === "ALL"
-      ? products
-      : products.filter((product) =>
-          product.goal.includes(activeGoal)
-      );
+  function clearSearch() {
+    setQuery("");
+    searchInput.current?.focus();
+  }
+
+  function resetFilters() {
+    clearSearch();
+    handleGoalChange("ALL");
+  }
+
+  const filteredProducts = filterCatalogProducts(products, query, activeGoal);
   return (
     <main className="min-h-screen bg-[#FAF8F2] text-[#20201D]">
       <Navbar />
@@ -62,7 +70,36 @@ export default function ShopContent({
       <section className="px-6 py-16">
         <div className="mx-auto max-w-7xl">
 
-          <div className="mt-10 flex flex-wrap gap-3">
+          <div role="search" aria-label="Buscar productos" className="rounded-3xl border border-[#20201D]/10 bg-[#F2EBDD] p-5 sm:p-7">
+            <label htmlFor="catalog-search" className="block text-sm font-semibold text-[#20201D]">
+              Buscar productos
+            </label>
+            <div className="mt-3 flex flex-col gap-3 sm:flex-row">
+              <input
+                ref={searchInput}
+                id="catalog-search"
+                type="search"
+                name="search"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                maxLength={120}
+                placeholder="Nombre del producto"
+                aria-describedby="catalog-search-help"
+                className="min-w-0 flex-1 rounded-2xl border border-[#20201D]/20 bg-[#FAF8F2] px-4 py-3 text-base outline-none focus-visible:ring-2 focus-visible:ring-[#68705A]"
+              />
+              {query.length > 0 && (
+                <button type="button" onClick={clearSearch}
+                  className="rounded-full border border-[#20201D]/20 px-5 py-3 text-sm font-semibold transition hover:bg-[#FAF8F2] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68705A]">
+                  Limpiar búsqueda
+                </button>
+              )}
+            </div>
+            <p id="catalog-search-help" className="mt-3 text-sm text-[#20201D]/60">
+              Busca por nombre y combina la búsqueda con los objetivos.
+            </p>
+          </div>
+
+          <div role="group" aria-label="Filtrar por objetivo" className="mt-6 flex flex-wrap gap-3">
             {goals.map((goal) => {
               const isActive = activeGoal === goal;
 
@@ -71,7 +108,8 @@ export default function ShopContent({
                   key={goal}
                   type="button"
                   onClick={() => handleGoalChange(goal)}
-                  className={`rounded-full px-5 py-2.5 text-sm font-semibold transition ${
+                  aria-pressed={isActive}
+                  className={`rounded-full px-5 py-2.5 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68705A] ${
                     isActive
                       ? "bg-[#20201D] text-[#FAF8F2]"
                       : "border border-[#20201D]/15 text-[#20201D]/55 hover:border-[#20201D] hover:text-[#20201D]"
@@ -83,7 +121,7 @@ export default function ShopContent({
             })}
           </div>
           <div className="mt-8 flex items-center justify-between border-b border-[#20201D]/10 pb-4">
-            <p className="text-sm text-[#20201D]/45">
+            <p role="status" aria-live="polite" aria-atomic="true" className="text-sm text-[#20201D]/60">
               {filteredProducts.length}{" "}
               {filteredProducts.length === 1 ? "producto" : "productos"}
             </p>
@@ -94,6 +132,22 @@ export default function ShopContent({
               </p>
             )}
           </div>
+          {(query.length > 0 || activeGoal !== "ALL") && (
+            <button type="button" onClick={resetFilters}
+              className="my-5 rounded-full border border-[#20201D]/20 px-5 py-2.5 text-sm font-semibold transition hover:bg-[#F2EBDD] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68705A]">
+              Restablecer filtros
+            </button>
+          )}
+          {filteredProducts.length === 0 && (
+            <div className="rounded-3xl border border-[#20201D]/10 bg-[#F2EBDD] px-6 py-12 text-center">
+              <h2 className="text-2xl font-bold">No encontramos productos.</h2>
+              <p className="mt-3 text-[#20201D]/60">Prueba otro nombre o restablece la búsqueda y los objetivos.</p>
+              <button type="button" onClick={resetFilters}
+                className="mt-6 rounded-full bg-[#20201D] px-6 py-3 font-semibold text-[#FAF8F2] transition hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68705A]">
+                Ver todos los productos
+              </button>
+            </div>
+          )}
           <div className="grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filteredProducts.map((product) => (
               <article
