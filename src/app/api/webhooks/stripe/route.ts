@@ -1,3 +1,4 @@
+import { isPreviewEnvironment } from "@/lib/preview-runtime";
 
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
@@ -7,6 +8,7 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
+  if (isPreviewEnvironment()) return NextResponse.json({ error: "PREVIEW_OPERATION_BLOCKED" }, { status: 403 });
   const signature = request.headers.get("stripe-signature");
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
@@ -27,8 +29,8 @@ export async function POST(request: NextRequest) {
       signature,
       webhookSecret
     );
-  } catch (error) {
-    console.error("Firma de Stripe no válida:", error);
+  } catch {
+    console.error("Firma de Stripe no válida:");
 
     return NextResponse.json(
       { error: "Firma del webhook no válida." },
@@ -42,7 +44,8 @@ export async function POST(request: NextRequest) {
 
       if (
         session.metadata?.source === "origen-performance" &&
-        session.payment_status === "paid"
+        session.mode === "payment" && session.status === "complete" &&
+        session.livemode === event.livemode && session.payment_status === "paid"
       ) {
         const orderId = session.metadata?.order_id;
 
@@ -109,7 +112,7 @@ export async function POST(request: NextRequest) {
         );
 
         if (error) {
-          console.error("Error al confirmar el pedido:", error);
+          console.error("Error al confirmar el pedido:");
           throw new Error("No se pudo confirmar el pedido en Supabase.");
         }
 
@@ -123,7 +126,7 @@ export async function POST(request: NextRequest) {
     if (event.type === "checkout.session.expired") {
       const session = event.data.object;
 
-      if (session.metadata?.source === "origen-performance") {
+      if (session.metadata?.source === "origen-performance" && session.mode === "payment" && session.livemode === event.livemode) {
         const orderId = session.metadata?.order_id;
 
         if (!orderId) {
@@ -139,7 +142,7 @@ export async function POST(request: NextRequest) {
       );
 
         if (error) {
-          console.error("Error al expirar el pedido:", error);
+          console.error("Error al expirar el pedido:");
           throw new Error("No se pudo actualizar el pedido expirado.");
         }
 
@@ -148,8 +151,8 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ received: true });
-  } catch (error) {
-    console.error("Error al procesar el webhook de Stripe:", error);
+  } catch {
+    console.error("Error al procesar el webhook de Stripe:");
 
     return NextResponse.json(
       { error: "No se pudo procesar el evento de Stripe." },

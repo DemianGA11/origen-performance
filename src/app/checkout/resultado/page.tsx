@@ -8,6 +8,7 @@ import Navbar from "@/components/Navbar";
 import { useCart } from "@/context/CartContext";
 
 type PaymentResult = {
+  livemode: boolean;
   paid: boolean;
   orderConfirmed: boolean;
   orderId: string | null;
@@ -28,7 +29,6 @@ function CheckoutResultContent() {
 
   useEffect(() => {
     if (!sessionId) {
-      setLoading(false);
       return;
     }
 
@@ -116,6 +116,8 @@ function CheckoutResultContent() {
     };
   }, [sessionId, removePurchasedItems]);
 
+  const loadingSession = Boolean(sessionId) && loading;
+
   const orderConfirmed =
     result?.paid === true && result.orderConfirmed === true;
 
@@ -141,7 +143,7 @@ function CheckoutResultContent() {
           </p>
 
           <h1 className="mt-5 text-4xl font-bold md:text-5xl">
-            {loading
+            {loadingSession
               ? "Verificando tu compra..."
               : orderConfirmed
                 ? "¡Compra confirmada!"
@@ -151,14 +153,16 @@ function CheckoutResultContent() {
           </h1>
 
           <p className="mx-auto mt-5 max-w-xl leading-7 text-[#20201D]/60">
-            {loading
+            {loadingSession
               ? "Estamos verificando el pago y el registro de tu pedido."
               : !sessionId
                 ? "No encontramos una sesión de pago para verificar."
                 : error
                   ? error
                   : orderConfirmed
-                    ? "Tu pago y los productos de tu pedido se registraron correctamente. Esta compra se realizó en el entorno de pruebas; no hubo ningún cobro real."
+                    ? result?.livemode
+                      ? "Tu pago y los productos de tu pedido se registraron correctamente."
+                      : "Tu pago y pedido de prueba se registraron correctamente; no hubo cobro real."
                     : paymentPendingRegistration
                       ? "Stripe confirmó el pago. Estamos esperando que termine el registro del pedido. No es necesario volver a pagar."
                       : "Stripe todavía no confirma este pago."}
@@ -191,8 +195,7 @@ function CheckoutResultContent() {
           </div>
 
           <p className="mt-8 text-xs text-[#20201D]/40">
-            Entorno de pruebas de ORIGEN PERFORMANCE.
-            No se realizaron cargos reales.
+            {result ? (result.livemode ? "Stripe en modo real; revisa el estado del pago mostrado arriba." : "Entorno de pruebas: no se realizaron cargos reales.") : "El estado se verifica con Stripe y el registro del pedido."}
           </p>
         </div>
       </section>

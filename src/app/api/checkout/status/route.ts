@@ -1,3 +1,4 @@
+import { isPreviewEnvironment } from "@/lib/preview-runtime";
 
 import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
@@ -6,9 +7,10 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 export const runtime = "nodejs";
 
 export async function GET(request: NextRequest) {
+  if (isPreviewEnvironment()) return NextResponse.json({ error: "PREVIEW_OPERATION_BLOCKED" }, { status: 403 });
   const sessionId = request.nextUrl.searchParams.get("session_id");
 
-  if (!sessionId || !sessionId.startsWith("cs_test_")) {
+  if (!sessionId || !/^cs_(?:test|live)_[A-Za-z0-9_]+$/.test(sessionId)) {
     return NextResponse.json(
       { error: "Sesión de pago no válida." },
       { status: 400 }
@@ -17,6 +19,9 @@ export async function GET(request: NextRequest) {
 
   try {
     const session = await stripe.checkout.sessions.retrieve(sessionId);
+    if (session.id !== sessionId || session.mode !== "payment" || session.metadata?.source !== "origen-performance") {
+      return NextResponse.json({ error: "Sesion de pago no valida." }, { status: 404 });
+    }
 
     const paid =
       session.status === "complete" &&
@@ -33,7 +38,7 @@ export async function GET(request: NextRequest) {
         .maybeSingle();
 
       if (error) {
-        console.error("Error al consultar el pedido:", error);
+        console.error("Error al consultar el pedido:");
 
         return NextResponse.json(
           { error: "No se pudo verificar el pedido." },
@@ -56,7 +61,7 @@ export async function GET(request: NextRequest) {
             .eq("order_id", order.id);
 
         if (itemsError) {
-          console.error("Error al verificar productos:", itemsError);
+          console.error("Error al verificar productos:");
 
           return NextResponse.json(
             { error: "No se pudieron verificar los productos." },
@@ -81,6 +86,7 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({
+      livemode: session.livemode,
       paid,
       orderConfirmed,
       orderId,
@@ -89,8 +95,8 @@ export async function GET(request: NextRequest) {
       amountTotal: session.amount_total,
       currency: session.currency,
     });
-  } catch (error) {
-    console.error("Error al verificar el pago:", error);
+  } catch {
+    console.error("Error al verificar el pago:");
 
     return NextResponse.json(
       { error: "No se pudo verificar el pago." },

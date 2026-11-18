@@ -1,6 +1,6 @@
+import { isPreviewEnvironment } from "@/lib/preview-runtime";
 import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
-import { products } from "@/data/products";
 
 type CheckoutCatalogProduct = {
   id: number;
@@ -20,7 +20,19 @@ type CheckoutItem = {
 };
 
 export async function POST(request: NextRequest) {
+  if (isPreviewEnvironment()) return NextResponse.json({ error: "PREVIEW_OPERATION_BLOCKED" }, { status: 403 });
   try {
+    // Production returns only to the operator-approved public HTTPS origin.
+    const production = process.env.VERCEL_ENV === "production";
+    const configuredOrigin = process.env.STRIPE_CHECKOUT_ORIGIN;
+    if (production && !configuredOrigin) {
+      return NextResponse.json({ error: "Configuracion de pago incompleta." }, { status: 503 });
+    }
+    const checkoutOrigin = new URL(configuredOrigin ?? request.nextUrl.origin);
+    if (checkoutOrigin.username || checkoutOrigin.password || checkoutOrigin.pathname !== "/"
+      || checkoutOrigin.search || checkoutOrigin.hash || (production && checkoutOrigin.protocol !== "https:")) {
+      return NextResponse.json({ error: "Configuracion de pago no valida." }, { status: 503 });
+    }
     const idempotencyKey = request.headers.get("Idempotency-Key");
 
     if (
@@ -87,8 +99,7 @@ export async function POST(request: NextRequest) {
         );
     }
     
-    // Consultar el catálogo de Supabase.
-    // Por ahora, esta consulta no modifica el checkout.
+    // Supabase es la fuente del catálogo disponible para checkout.
     const { data: catalogProducts, error: catalogError } =
       await supabaseAdmin
         .from("products")
@@ -97,10 +108,7 @@ export async function POST(request: NextRequest) {
         .returns<CheckoutCatalogProduct[]>();
 
     if (catalogError) {
-      console.error(
-        "Error al consultar el catálogo de Supabase:",
-        catalogError
-      );
+      console.error("Error al consultar el catálogo de Supabase:");
 
       return NextResponse.json(
         { error: "No se pudo consultar el catálogo." },
@@ -115,8 +123,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Verificar que los precios de Supabase coincidan
-    // con los del catálogo que actualmente utiliza Stripe.
+    // Validar precio, disponibilidad y existencias antes de preparar el pago.
     
     
     for (const catalogProduct of catalogProducts) {
@@ -175,10 +182,6 @@ export async function POST(request: NextRequest) {
 
 
     const lineItems = items.map((item) => {
-      const product = products.find(
-        (p) => p.id === item.productId
-      );
-      
     const catalogProduct = catalogProducts.find(
         (p) => p.id === item.productId
     );
@@ -187,10 +190,6 @@ export async function POST(request: NextRequest) {
         throw new Error("Producto no encontrado en Supabase.");
     }
     
-      if (!product) {
-        throw new Error("Producto no válido.");
-      }
-
       if (
         !Number.isSafeInteger(item.quantity) ||
         item.quantity < 1 ||
@@ -201,7 +200,7 @@ export async function POST(request: NextRequest) {
 
       // No permitir vender productos cuya formulación
       // todavía no está definida.
-      if (product.id === 6) {
+      if (catalogProduct.id === 6) {
         throw new Error(
           "Pre-Performance todavía no está disponible para compra."
         );
@@ -230,6 +229,9 @@ export async function POST(request: NextRequest) {
             total + item.price_data.unit_amount * item.quantity,
         0
     );
+    if (!Number.isSafeInteger(totalAmount) || totalAmount <= 0 || totalAmount > 2147483647) {
+      return NextResponse.json({ error: "El importe del pedido no es valido." }, { status: 400 });
+    }
     const checkoutFingerprint = createHash("sha256")
     .update(
         JSON.stringify({
@@ -271,10 +273,7 @@ export async function POST(request: NextRequest) {
         .maybeSingle();
 
     if (existingOrderError) {
-    console.error(
-        "Error al buscar un pedido existente:",
-        existingOrderError
-    );
+    console.error("Error al buscar un pedido existente:");
 
     return NextResponse.json(
         { error: "No se pudo verificar el intento de compra." },
@@ -301,10 +300,7 @@ export async function POST(request: NextRequest) {
     .eq("order_id", existingOrder.id);
 
 if (reservationsError) {
-  console.error(
-    "Error al consultar las reservas:",
-    reservationsError
-  );
+  console.error("Error al consultar las reservas:");
 
   return NextResponse.json(
     { error: "No se pudo verificar el inventario reservado." },
@@ -337,14 +333,15 @@ if (reservationsError) {
             const recoveredSession = await stripe.checkout.sessions.create(
                 {
                 mode: "payment",
+        ...(production ? { allowed_payment_method_types: ["card" as const] } : {}),
                 expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
                 metadata: {
                     source: "origen-performance",
                     order_id: existingOrder.id,
                 },
                 line_items: lineItems,
-                success_url: `${request.nextUrl.origin}/checkout/resultado?session_id={CHECKOUT_SESSION_ID}`,
-                cancel_url: `${request.nextUrl.origin}/checkout?stripe=cancel`,
+                success_url: `${checkoutOrigin.origin}/checkout/resultado?session_id={CHECKOUT_SESSION_ID}`,
+                cancel_url: `${checkoutOrigin.origin}/checkout?stripe=cancel`,
                 },
                 {
                 idempotencyKey: idempotencyKey,
@@ -376,7 +373,7 @@ if (reservationsError) {
                 .maybeSingle();
 
             if (linkError || !linkedOrder) {
-                console.error("No se pudo vincular la sesión recuperada:", linkError);
+                console.error("No se pudo vincular la sesión recuperada:");
 
                 return NextResponse.json(
                 { error: "No se pudo recuperar el pedido de forma segura." },
@@ -444,7 +441,7 @@ if (reservationsError) {
             );
         }
 
-        console.error("Error al crear pedido pendiente:", orderError);
+        console.error("Error al crear pedido pendiente:");
 
         return NextResponse.json(
             { error: "No se pudo preparar el pedido." },
@@ -460,10 +457,7 @@ if (reservationsError) {
         );
 
         if (reservationError) {
-        console.error(
-            "Error al reservar inventario:",
-            reservationError
-        );
+        console.error("Error al reservar inventario:");
 
         return NextResponse.json(
             {
@@ -473,9 +467,9 @@ if (reservationsError) {
             { status: 409 }
         );
     }
-    let stripeSessionCreated = false;
     const session = await stripe.checkout.sessions.create({
         mode: "payment",
+        ...(production ? { allowed_payment_method_types: ["card" as const] } : {}),
         expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
         metadata: {
             source: "origen-performance",
@@ -483,12 +477,11 @@ if (reservationsError) {
         },
       
       line_items: lineItems,
-      success_url: `${request.nextUrl.origin}/checkout/resultado?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${request.nextUrl.origin}/checkout?stripe=cancel`,
+      success_url: `${checkoutOrigin.origin}/checkout/resultado?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${checkoutOrigin.origin}/checkout?stripe=cancel`,
     }, {
     idempotencyKey: idempotencyKey,
     });
-    stripeSessionCreated = true;
     
     const { error: sessionError } = await supabaseAdmin.rpc(
         "link_stripe_session_to_order",
@@ -503,10 +496,7 @@ if (reservationsError) {
 
 
         if (sessionError) {
-        console.error(
-            "Error al vincular Stripe con el pedido:",
-            sessionError
-        );
+        console.error("Error al vincular Stripe con el pedido:");
 
         return NextResponse.json(
             { error: "No se pudo vincular el pedido con Stripe." },
@@ -517,8 +507,8 @@ if (reservationsError) {
         url: session.url,
         sessionId: session.id,
     });
-  } catch (error) {
-    console.error("Error al crear sesión de Stripe:", error);
+  } catch {
+    console.error("Error al crear sesión de Stripe:");
 
     return NextResponse.json(
       { error: "No se pudo iniciar el pago." },

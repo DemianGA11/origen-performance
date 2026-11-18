@@ -262,10 +262,13 @@ export default function CheckoutPage() {
             }
 
             const stripeUrl = new URL(data.url);
+            if (stripeUrl.origin !== "https://checkout.stripe.com" || stripeUrl.username || stripeUrl.password) {
+                throw new Error("Stripe no devolvio una URL de pago segura.");
+            }
 
             if (
                 typeof data.sessionId !== "string" ||
-                !data.sessionId.startsWith("cs_test_")
+                !/^cs_(?:test|live)_[A-Za-z0-9_]+$/.test(data.sessionId)
             ) {
             throw new Error(
                     "Stripe no devolvió un identificador de sesión válido."
@@ -290,7 +293,7 @@ export default function CheckoutPage() {
             checkoutInProgress.current = false;
             setIsProcessingPayment(false);
 
-            console.error("Error al iniciar Stripe Checkout:", error);
+            console.error("Error al iniciar Stripe Checkout.");
 
             const message =
                 error instanceof Error
@@ -542,7 +545,7 @@ export default function CheckoutPage() {
         </button>
 
         <p className="mt-4 text-center text-xs text-[#20201D]/40">
-            No se realizará ningún cobro real en este prototipo.
+            El cobro se realiza en Stripe despues de confirmar el pago.
         </p>
         </div>
         ) : checkoutStep === "payment" ? (
@@ -561,7 +564,7 @@ export default function CheckoutPage() {
                 </p>
 
                 <p className="mt-2 text-sm text-[#20201D]/50">
-                Selecciona cómo deseas simular el pago de este pedido.
+                Continua a Stripe para pagar de forma segura con tarjeta.
                 </p>
 
                 <div className="mt-8 space-y-4">
@@ -576,7 +579,7 @@ export default function CheckoutPage() {
                     >
                         <div className="flex items-center justify-between">
                         <div>
-                            <p className="font-semibold">Tarjeta</p>
+                            <p className="font-semibold">Tarjeta - Stripe</p>
 
                             <p
                             className={`mt-1 text-sm ${
@@ -585,7 +588,7 @@ export default function CheckoutPage() {
                                 : "text-[#20201D]/50"
                             }`}
                             >
-                            Pago simulado para fines de demostración.
+                            Pago con tarjeta mediante Stripe.
                             </p>
                         </div>
 
@@ -595,45 +598,17 @@ export default function CheckoutPage() {
                         </div>
                     </button>
 
-                    <button
-                        type="button"
-                        disabled
-                        className={`w-full rounded-2xl border p-5 text-left transition ${
-                        paymentMethod === "transfer"
-                            ? "border-[#20201D] bg-[#20201D] text-[#FAF8F2]"
-                            : "border-[#20201D]/10 hover:border-[#68705A]"
-                        }`}
-                    >
-                        <div className="flex items-center justify-between">
-                        <div>
-                            <p className="font-semibold">Transferencia bancaria</p>
 
-                            <p
-                            className={`mt-1 text-sm ${
-                                paymentMethod === "transfer"
-                                ? "text-[#FAF8F2]/55"
-                                : "text-[#20201D]/50"
-                            }`}
-                            >
-                            Próximamente disponible.
-                            </p>
-                        </div>
-
-                        <span className="text-sm font-semibold">
-                            {paymentMethod === "transfer" ? "Seleccionado" : ""}
-                        </span>
-                        </div>
-                    </button>
                     </div>
 
                 <div className="mt-8 rounded-2xl bg-[#F2EBDD] p-5">
                 <p className="text-sm font-semibold">
-                    Prototipo académico
+                    Pago seguro con Stripe
                 </p>
 
                 <p className="mt-2 text-sm leading-6 text-[#20201D]/55">
-                    Esta tienda no procesará ningún pago real. No introduzcas
-                    información bancaria o datos reales de tarjetas.
+                    Revisa el importe antes de continuar. Los datos de tu tarjeta se
+                    introducen exclusivamente en la pagina segura de Stripe.
                 </p>
                 </div>
 
@@ -717,9 +692,7 @@ export default function CheckoutPage() {
             </p>
 
             <p className="mt-3 font-semibold">
-                {paymentMethod === "card"
-                ? "Tarjeta — simulación"
-                : "Transferencia bancaria — simulación"}
+                Tarjeta - Stripe
             </p>
             </div>
 
@@ -733,7 +706,7 @@ export default function CheckoutPage() {
             </button>
 
             <p className="mt-4 text-center text-xs text-[#20201D]/40">
-            Esta acción es únicamente una simulación académica.
+            Continuaras a Stripe para revisar y pagar el importe indicado.
             </p>
         </div>
         )}
