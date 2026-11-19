@@ -1,3 +1,4 @@
+import { getProductImages } from "@/lib/product-images";
 import Image from "next/image";
 import type { Product } from "@/data/products";
 
@@ -8,7 +9,7 @@ type ProductVisualProps = {
 export default function ProductVisual({
   product,
 }: ProductVisualProps) {
-  const mainImage = product.images[0];
+  const mainImage = getProductImages(product)[0];
 
   if (!mainImage) {
     return <div className="flex h-full w-full items-center justify-center p-6 text-center text-sm text-[#68705A]">Fotografía pendiente</div>;

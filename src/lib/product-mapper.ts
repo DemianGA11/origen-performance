@@ -1,3 +1,4 @@
+import { getProductImages } from "@/lib/product-images";
 
 import type { Product } from "@/data/products";
 
@@ -30,7 +31,9 @@ export function mapDatabaseProduct(
     name: product.name,
     category: product.category,
     packaging: product.packaging,
-    images: product.images,
+    images: getProductImages(product),
+    isActive: product.is_active,
+    stock: product.stock,
     description: product.description,
     longDescription: product.long_description,
     price: Number(product.price),

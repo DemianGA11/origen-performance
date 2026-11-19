@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import {
@@ -6,6 +7,8 @@ import {
 } from "@/lib/product-mapper";
 
 export async function getShopProducts() {
+  // Read current catalog data at request time, not at deployment/prerender time.
+  await connection();
   const { data, error } = await supabaseAdmin
     .from("products")
     .select(

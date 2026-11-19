@@ -1,5 +1,7 @@
 "use client";
 
+import { canPurchaseProduct } from "@/lib/product-availability";
+
 import { useState } from "react";
 import { Product } from "@/data/products";
 import { useCart } from "@/context/CartContext";
@@ -15,16 +17,18 @@ export default function AddToCart({
   const [added, setAdded] = useState(false);
 
   const { addToCart } = useCart();
+  const available = canPurchaseProduct(product);
 
   function decreaseQuantity() {
     setQuantity((current) => Math.max(1, current - 1));
   }
 
   function increaseQuantity() {
-    setQuantity((current) => current + 1);
+    setQuantity((current) => Math.min(product.stock ?? 0, 20, current + 1));
 }
 
   function handleAddToCart() {
+    if (!available || quantity > (product.stock ?? 0)) return;
     addToCart(product, quantity);
 
     setAdded(true);
@@ -53,6 +57,7 @@ export default function AddToCart({
 
           <button
             onClick={increaseQuantity}
+            disabled={!available || quantity >= Math.min(product.stock ?? 0, 20)}
             className="px-5 py-4 text-lg"
             aria-label="Aumentar cantidad"
           >
@@ -62,13 +67,14 @@ export default function AddToCart({
 
         <button
           onClick={handleAddToCart}
-          className={`flex-1 rounded-full px-8 py-4 font-semibold transition ${
+          disabled={!available}
+          className={`flex-1 rounded-full px-8 py-4 font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
             added
               ? "bg-[#68705A] text-white"
               : "bg-[#20201D] text-[#FAF8F2] hover:scale-[1.01]"
           }`}
         >
-          {added ? "✓ Agregado al carrito" : "Agregar al carrito"}
+          {!available ? "No disponible para compra" : added ? "✓ Agregado al carrito" : "Agregar al carrito"}
         </button>
 
       </div>

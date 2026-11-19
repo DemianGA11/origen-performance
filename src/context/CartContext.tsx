@@ -8,6 +8,7 @@ import {
   useState,
 } from "react";
 
+import { canPurchaseProduct } from "@/lib/product-availability";
 import { Product } from "@/data/products";
 
 export type CartItem = {
@@ -69,6 +70,7 @@ export function CartProvider({
   }, [items, hasLoaded]);
 
   function addToCart(product: Product, quantity = 1) {
+    if (!canPurchaseProduct(product) || !Number.isSafeInteger(quantity) || quantity < 1 || quantity > Math.min(product.stock ?? 0, 20)) return;
     setItems((currentItems) => {
       const existingItem = currentItems.find(
         (item) => item.product.id === product.id
@@ -79,7 +81,8 @@ export function CartProvider({
           item.product.id === product.id
             ? {
                 ...item,
-                quantity: item.quantity + quantity,
+                product,
+                quantity: Math.min(product.stock ?? 0, 20, item.quantity + quantity),
               }
             : item
         );

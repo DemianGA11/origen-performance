@@ -1,5 +1,7 @@
 "use client";
 
+import { getProductImages } from "@/lib/product-images";
+
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
@@ -15,7 +17,7 @@ export default function ProductGallery({
   const [activeIndex, setActiveIndex] = useState(0);
   const [isZoomOpen, setIsZoomOpen] = useState(false);
 
-    const images = product.images;
+    const images = getProductImages(product);
     const mainImage = images[activeIndex];
 
     function nextImage() {

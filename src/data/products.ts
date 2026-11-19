@@ -3,6 +3,8 @@ export type NutritionItem = {
   amount: string;
 };
 export type Product = {
+  isActive?: boolean;
+  stock?: number;
   id: number;
   name: string;
   category: string;

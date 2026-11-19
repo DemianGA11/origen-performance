@@ -1,4 +1,4 @@
-﻿import assert from 'node:assert/strict';
+import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import vm from 'node:vm';
@@ -125,7 +125,7 @@ test('products without uploaded images render a placeholder in catalog and galle
     const source = readFileSync(new URL(`../src/components/product/${file}`, import.meta.url), 'utf8');
     const code = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, jsx: ts.JsxEmit.ReactJSX } }).outputText;
     const exports = {};
-    const imports = { 'react/jsx-runtime': jsx, 'next/image': { default: 'image' }, react: { useState: initial => [initial, () => {}], useEffect() {} }, 'react-dom': { createPortal() { throw new Error('Unexpected portal'); } } };
+    const imports = { 'react/jsx-runtime': jsx, 'next/image': { default: 'image' }, '@/lib/product-images': { getProductImages: product => product.images }, react: { useState: initial => [initial, () => {}], useEffect() {} }, 'react-dom': { createPortal() { throw new Error('Unexpected portal'); } } };
     vm.runInNewContext(code, { exports, require(name) { assert.ok(name in imports); return imports[name]; } });
     const result = exports.default({ product: { images: [] } });
     assert.equal(result.type, 'div');
