@@ -1,4 +1,4 @@
-﻿import assert from 'node:assert/strict';
+import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import vm from 'node:vm';
@@ -13,6 +13,7 @@ function load(file, imports = {}, globals = {}) {
 }
 const images = load('lib/product-images.ts');
 const availability = load('lib/product-availability.ts');
+const cartStock = load('lib/cart-stock.ts', { '@/lib/product-availability': availability });
 const mapper = load('lib/product-mapper.ts', { '@/lib/product-images': images });
 const url = 'https://fixture.supabase.co/storage/v1/object/public/product-images/8/main.png';
 const row = { id: 8, name: 'Conceptual product', images: [url], price: 39, is_active: false, stock: 0, goal: [], category: 'FOOD' };
@@ -23,7 +24,7 @@ function nodes(node) {
   if (Array.isArray(node)) return node.flatMap(nodes);
   return node?.props ? [node, ...nodes(node.props.children)] : [];
 }
-function imports(extra = {}) { return { 'react/jsx-runtime': jsx, 'next/link': { default: 'a' }, '@/components/Navbar': { default: 'nav' }, '@/components/product/ProductVisual': { default: visual.default }, '@/components/product/QuickAddButton': { default: 'quick-add' }, '@/lib/product-availability': availability, react, ...extra }; }
+function imports(extra = {}) { return { 'react/jsx-runtime': jsx, 'next/link': { default: 'a' }, 'next/navigation': { useRouter: () => ({ refresh() {} }) }, '@/components/Navbar': { default: 'nav' }, '@/components/product/ProductVisual': { default: visual.default }, '@/components/product/QuickAddButton': { default: 'quick-add' }, '@/lib/product-availability': availability, react, ...extra }; }
 
 test('image normalization preserves main image order, supports old local and new Storage URLs', () => {
   assert.deepEqual(Array.from(images.getProductImages({ images: [' ', null, 'javascript:alert(1)', url, '/products/whey/principal.webp'] })), [url, '/products/whey/principal.webp']);
@@ -91,8 +92,8 @@ test('inactive, stock zero, legacy unknown availability and product 6 cannot be 
 test('CartContext refuses conceptual additions and refreshes images when an available item is added again', () => {
   const state = [];
   let cursor = 0;
-  const contextReact = { ...react, createContext: () => ({ Provider: 'provider' }), useState(initial) { const index = cursor++; if (!(index in state)) state[index] = initial; return [state[index], update => { state[index] = typeof update === 'function' ? update(state[index]) : update; }]; } };
-  const context = load('context/CartContext.tsx', { 'react/jsx-runtime': jsx, react: contextReact, '@/lib/product-availability': availability });
+  const contextReact = { ...react, useCallback: fn => fn, createContext: () => ({ Provider: 'provider' }), useState(initial) { const index = cursor++; if (!(index in state)) state[index] = initial; return [state[index], update => { state[index] = typeof update === 'function' ? update(state[index]) : update; }]; } };
+  const context = load('context/CartContext.tsx', { 'react/jsx-runtime': jsx, react: contextReact, '@/lib/cart-stock': cartStock, '@/lib/product-availability': availability });
   const render = () => { cursor = 0; return context.CartProvider({ children: null }).props.value; };
   render().addToCart(product);
   assert.equal(render().items.length, 0);

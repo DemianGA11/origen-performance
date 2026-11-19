@@ -1,9 +1,11 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { Product } from "@/data/products";
 import ProductVisual from "@/components/product/ProductVisual";
-import { canPurchaseProduct } from "@/lib/product-availability";
+import { getCartLimit, getAvailabilityLabel, canPurchaseProduct } from "@/lib/product-availability";
 import Navbar from "@/components/Navbar";
 import { useCart } from "@/context/CartContext";
 
@@ -13,7 +15,16 @@ export default function CartContent({ products }: { products: Product[] }) {
     removeFromCart,
     updateQuantity,
     subtotal,
+    syncProducts,
   } = useCart();
+
+  const router = useRouter();
+  useEffect(() => { syncProducts(products); }, [products, syncProducts, storedItems]);
+  useEffect(() => {
+    const refresh = () => router.refresh();
+    window.addEventListener("focus", refresh);
+    return () => window.removeEventListener("focus", refresh);
+  }, [router]);
 
   const catalog = new Map(products.map((product) => [product.id, product]));
   const items = storedItems.map((item) => {
@@ -24,7 +35,7 @@ export default function CartContent({ products }: { products: Product[] }) {
       product: { ...item.product, images: current?.images ?? [], isActive: current?.isActive ?? false, stock: current?.stock ?? 0 },
     };
   });
-  const hasUnavailableItems = items.some((item) => !canPurchaseProduct(item.product));
+  const hasUnavailableItems = items.some((item) => !canPurchaseProduct(item.product) || item.quantity > getCartLimit(item.product));
 
   return (
     <main className="min-h-screen bg-[#FAF8F2] text-[#20201D]">
@@ -41,6 +52,7 @@ export default function CartContent({ products }: { products: Product[] }) {
             Tu selección.
           </h1>
 
+          <button type="button" onClick={() => router.refresh()} className="mt-6 min-h-11 rounded-full border border-[#20201D]/20 px-5 py-2 text-sm font-semibold">Actualizar disponibilidad</button>
           {items.length === 0 ? (
             <div className="mt-16 rounded-3xl bg-[#F2EBDD] p-12 text-center">
 
@@ -84,6 +96,9 @@ export default function CartContent({ products }: { products: Product[] }) {
                             {item.product.category}
                           </p>
 
+                          {canPurchaseProduct(item.product) && <p className="text-sm text-[#68705A]">{getAvailabilityLabel(item.product)}</p>}
+                          {item.stockAdjusted && <p role="status" className="text-sm text-[#B76D4B]">La disponibilidad cambió: ajustamos la cantidad al stock actual.</p>}
+                          {item.quantity > getCartLimit(item.product) && canPurchaseProduct(item.product) && <p role="alert" className="text-sm text-[#B76D4B]">La cantidad supera el stock actual. Actualiza la disponibilidad.</p>}
                           {!canPurchaseProduct(item.product) && <p role="status" className="text-sm text-[#B76D4B]">No disponible para compra. Retira este producto para continuar.</p>}
                           <h2 className="mt-1 font-bold">
                             {item.product.name}
@@ -111,10 +126,11 @@ export default function CartContent({ products }: { products: Product[] }) {
                             onClick={() =>
                               updateQuantity(
                                 item.product.id,
-                                item.quantity - 1
+                                item.quantity - 1,
+                                item.product
                               )
                             }
-                            className="px-4 py-2"
+                            className="min-h-11 min-w-11 px-4 py-2 disabled:opacity-40"
                           >
                             −
                           </button>
@@ -124,14 +140,15 @@ export default function CartContent({ products }: { products: Product[] }) {
                           </span>
 
                           <button
-                            disabled={!canPurchaseProduct(item.product)}
+                            disabled={item.quantity >= getCartLimit(item.product)}
                             onClick={() =>
                               updateQuantity(
                                 item.product.id,
-                                item.quantity + 1
+                                item.quantity + 1,
+                                item.product
                               )
                             }
-                            className="px-4 py-2"
+                            className="min-h-11 min-w-11 px-4 py-2 disabled:opacity-40"
                           >
                             +
                           </button>
@@ -188,7 +205,7 @@ export default function CartContent({ products }: { products: Product[] }) {
                 </div>
 
                 {hasUnavailableItems ? (
-                  <p role="alert" className="mt-6 text-sm text-[#B76D4B]">Retira los productos no disponibles antes de continuar al checkout.</p>
+                  <p role="alert" className="mt-6 text-sm text-[#B76D4B]">Revisa los productos y cantidades no disponibles antes de continuar al checkout.</p>
                 ) : (
                   <Link href="/checkout" className="mt-6 block w-full rounded-full bg-[#20201D] px-6 py-4 text-center font-semibold text-[#FAF8F2] transition hover:opacity-80">
                     Continuar al checkout →

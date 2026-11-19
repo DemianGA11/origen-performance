@@ -2,25 +2,29 @@
 
 import {
   createContext,
+  useCallback,
   ReactNode,
   useContext,
   useEffect,
   useState,
 } from "react";
 
-import { canPurchaseProduct } from "@/lib/product-availability";
+import { syncCartStock } from "@/lib/cart-stock";
+import { getCartLimit, canPurchaseProduct } from "@/lib/product-availability";
 import { Product } from "@/data/products";
 
 export type CartItem = {
   product: Product;
   quantity: number;
+  stockAdjusted?: boolean;
 };
 
 type CartContextType = {
   items: CartItem[];
   addToCart: (product: Product, quantity?: number) => void;
   removeFromCart: (productId: number) => void;
-  updateQuantity: (productId: number, quantity: number) => void;
+  updateQuantity: (productId: number, quantity: number, currentProduct?: Product) => void;
+  syncProducts: (products: Product[]) => void;
   clearCart: () => void;
   removePurchasedItems: (
     purchasedItems: { productId: number; quantity: number }[]
@@ -69,6 +73,10 @@ export function CartProvider({
     );
   }, [items, hasLoaded]);
 
+  const syncProducts = useCallback((products: Product[]) => {
+    setItems((current) => syncCartStock(current, products));
+  }, []);
+
   function addToCart(product: Product, quantity = 1) {
     if (!canPurchaseProduct(product) || !Number.isSafeInteger(quantity) || quantity < 1 || quantity > Math.min(product.stock ?? 0, 20)) return;
     setItems((currentItems) => {
@@ -82,7 +90,8 @@ export function CartProvider({
             ? {
                 ...item,
                 product,
-                quantity: Math.min(product.stock ?? 0, 20, item.quantity + quantity),
+                quantity: Math.min(getCartLimit(product), item.quantity + quantity),
+                stockAdjusted: false,
               }
             : item
         );
@@ -108,20 +117,23 @@ export function CartProvider({
 
   function updateQuantity(
     productId: number,
-    quantity: number
+    quantity: number,
+    currentProduct?: Product
   ) {
-    if (quantity <= 0) {
+    if (!Number.isSafeInteger(quantity) || quantity < 0) return;
+    if (quantity === 0) {
       removeFromCart(productId);
       return;
     }
 
-    setItems((currentItems) =>
-      currentItems.map((item) =>
-        item.product.id === productId
-          ? { ...item, quantity }
-          : item
-      )
-    );
+    setItems((currentItems) => currentItems.map((item) => {
+      if (item.product.id !== productId) return item;
+      const product = currentProduct
+        ? { ...item.product, images: currentProduct.images, stock: currentProduct.stock, isActive: currentProduct.isActive }
+        : item.product;
+      const limit = getCartLimit(product);
+      return { ...item, product, quantity: limit > 0 ? Math.min(quantity, limit) : item.quantity, stockAdjusted: false };
+    }));
   }
 
   function clearCart() {
@@ -166,6 +178,7 @@ export function CartProvider({
           addToCart,
           removeFromCart,
           updateQuantity,
+          syncProducts,
           clearCart,
           removePurchasedItems,
           totalItems,

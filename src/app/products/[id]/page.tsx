@@ -97,7 +97,7 @@ export default async function ProductPage({
               </p>
 
               <p className="mt-7 max-w-xl text-lg leading-8 text-[#20201D]/65">
-                {product.longDescription}
+                {product.longDescription || product.description}
               </p>
 
               <p className="mt-8 text-3xl font-bold">
@@ -106,35 +106,10 @@ export default async function ProductPage({
 
               <AddToCart product={product} />
 
-              <div className="mt-8 grid grid-cols-3 gap-3 border-t border-[#20201D]/10 pt-7">
-
-                <div>
-                  <p className="text-xs text-[#20201D]/40">
-                    ENVÍO
-                  </p>
-                  <p className="mt-1 text-sm font-semibold">
-                    México
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-xs text-[#20201D]/40">
-                    SELECCIÓN
-                  </p>
-                  <p className="mt-1 text-sm font-semibold">
-                    Verificada
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-xs text-[#20201D]/40">
-                    PAGO
-                  </p>
-                  <p className="mt-1 text-sm font-semibold">
-                    Seguro
-                  </p>
-                </div>
-
+              <div className="mt-8 space-y-3 border-t border-[#20201D]/10 pt-7 text-sm text-[#20201D]/70">
+                <p><span className="font-semibold text-[#20201D]">Presentación:</span> {product.size || "Consulta el contenido en la descripción del producto."}</p>
+                <p>Pago seguro mediante Stripe. El pago se confirma por el proveedor, no por la redirección.</p>
+                <p>Revisa las condiciones y datos de entrega antes de pagar. No se garantiza un plazo de entrega desde esta ficha.</p>
               </div>
 
             </div>
@@ -144,7 +119,7 @@ export default async function ProductPage({
 
       {/* ORIGEN VERIFIED */}
 
-      <section className="bg-[#20201D] px-6 py-24 text-[#FAF8F2]">
+      {product.verified && product.verifiedReasons.length > 0 && <section className="bg-[#20201D] px-6 py-24 text-[#FAF8F2]">
         <div className="mx-auto grid max-w-7xl gap-14 lg:grid-cols-2">
 
           <div>
@@ -181,6 +156,8 @@ export default async function ProductPage({
 
         </div>
       </section>
+
+      }
 
       {/* INGREDIENTES */}
 
