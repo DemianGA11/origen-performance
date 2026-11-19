@@ -80,16 +80,16 @@ export default function CartContent({ products }: { products: Product[] }) {
                 {items.map((item) => (
                   <article
                     key={item.product.id}
-                    className="flex gap-5 rounded-3xl border border-[#20201D]/10 bg-white p-5"
+                    className="flex flex-col gap-4 rounded-3xl sm:flex-row sm:gap-5 border border-[#20201D]/10 bg-white p-5"
                   >
 
                     <div className="relative flex h-28 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-[#F2EBDD]">
                       <ProductVisual product={item.product} />
                     </div>
 
-                    <div className="flex flex-1 flex-col justify-between">
+                    <div className="flex min-w-0 flex-1 flex-col justify-between">
 
-                      <div className="flex justify-between gap-4">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:justify-between sm:gap-4">
 
                         <div>
                           <p className="text-xs font-semibold text-[#68705A]">
@@ -100,7 +100,7 @@ export default function CartContent({ products }: { products: Product[] }) {
                           {item.stockAdjusted && <p role="status" className="text-sm text-[#B76D4B]">La disponibilidad cambió: ajustamos la cantidad al stock actual.</p>}
                           {item.quantity > getCartLimit(item.product) && canPurchaseProduct(item.product) && <p role="alert" className="text-sm text-[#B76D4B]">La cantidad supera el stock actual. Actualiza la disponibilidad.</p>}
                           {!canPurchaseProduct(item.product) && <p role="status" className="text-sm text-[#B76D4B]">No disponible para compra. Retira este producto para continuar.</p>}
-                          <h2 className="mt-1 font-bold">
+                          <h2 className="mt-1 break-words font-bold">
                             {item.product.name}
                           </h2>
 
@@ -118,7 +118,7 @@ export default function CartContent({ products }: { products: Product[] }) {
 
                       </div>
 
-                      <div className="mt-5 flex items-center justify-between">
+                      <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
 
                         <div className="flex items-center rounded-full border border-[#20201D]/15">
 
@@ -159,7 +159,7 @@ export default function CartContent({ products }: { products: Product[] }) {
                           onClick={() =>
                             removeFromCart(item.product.id)
                           }
-                          className="text-sm text-[#20201D]/45 underline"
+                          className="min-h-11 px-2 text-sm text-[#20201D]/60 underline"
                         >
                           Eliminar
                         </button>

@@ -82,13 +82,13 @@ export default async function ProductPage({
 
             {/* INFORMACIÓN */}
 
-            <div className="flex flex-col justify-center">
+            <div className="flex min-w-0 flex-col justify-center">
 
               <p className="mb-3 text-xs font-bold tracking-[0.2em] text-[#68705A]">
                 {product.category}
               </p>
 
-              <h1 className="text-4xl font-bold tracking-tight md:text-5xl">
+              <h1 className="break-words text-4xl font-bold tracking-tight md:text-5xl">
                 {product.name}
               </h1>
 
@@ -108,7 +108,7 @@ export default async function ProductPage({
 
               <div className="mt-8 space-y-3 border-t border-[#20201D]/10 pt-7 text-sm text-[#20201D]/70">
                 <p><span className="font-semibold text-[#20201D]">Presentación:</span> {product.size || "Consulta el contenido en la descripción del producto."}</p>
-                <p>Pago seguro mediante Stripe. El pago se confirma por el proveedor, no por la redirección.</p>
+                <p>Pago seguro mediante Stripe.</p>
                 <p>Revisa las condiciones y datos de entrega antes de pagar. No se garantiza un plazo de entrega desde esta ficha.</p>
               </div>
 

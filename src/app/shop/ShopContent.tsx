@@ -152,7 +152,7 @@ export default function ShopContent({
             {filteredProducts.map((product) => (
               <article
                 key={product.id}
-                className="group"
+                className="group min-w-0"
               >
                 <Link href={`/products/${product.id}`} className="block">
                   <div className="relative flex aspect-square cursor-pointer items-center justify-center overflow-hidden rounded-[2rem] border border-[#20201D]/5 bg-[#F2EBDD] transition duration-300 group-hover:border-[#20201D]/10 group-hover:shadow-lg">
@@ -190,7 +190,7 @@ export default function ShopContent({
 
                   {/* Nombre */}
                   <Link href={`/products/${product.id}`}>
-                    <h2 className="mt-2 text-xl font-bold tracking-tight transition-opacity hover:opacity-60">
+                    <h2 className="mt-2 break-words text-xl font-bold tracking-tight transition-opacity hover:opacity-60">
                       {product.name}
                     </h2>
                   </Link>

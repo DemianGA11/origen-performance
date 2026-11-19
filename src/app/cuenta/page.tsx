@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Navbar from "@/components/Navbar";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
@@ -68,7 +69,8 @@ export default function AccountPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#F2EBDD] px-6 py-16 text-[#20201D]">
+    <main className="min-h-screen bg-[#F2EBDD] px-4 pb-16 pt-32 text-[#20201D] sm:px-6">
+      <Navbar />
       <div className="mx-auto max-w-2xl">
         <Link
           href="/"
@@ -77,7 +79,7 @@ export default function AccountPage() {
           ORIGEN PERFORMANCE
         </Link>
 
-        <div className="mt-10 rounded-3xl bg-[#FAF8F2] p-8 shadow-sm md:p-12">
+        <div className="mt-10 rounded-3xl bg-[#FAF8F2] p-5 shadow-sm sm:p-8 md:p-12">
           <p className="text-sm font-semibold uppercase tracking-widest text-[#68705A]">
             Mi cuenta
           </p>
@@ -98,12 +100,12 @@ export default function AccountPage() {
             <p className="mt-5 text-sm text-[#20201D]/60">
               Nombre
             </p>
-            <p className="mt-1 font-medium">{account?.name}</p>
+            <p className="mt-1 break-words font-medium">{account?.name}</p>
 
             <p className="mt-5 text-sm text-[#20201D]/60">
               Correo electrónico
             </p>
-            <p className="mt-1 font-medium">{account?.email}</p>
+            <p className="mt-1 break-words font-medium">{account?.email}</p>
           </div>
 
           <div className="mt-10 border-t border-[#20201D]/10 pt-8">

@@ -2,10 +2,41 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { supabase } from "@/lib/supabase";
+
+type NavigationLink = { name: string; href: string };
+
+function MobileMenu({ links }: { links: NavigationLink[] }) {
+  const [open, setOpen] = useState(false);
+  const menuId = useId();
+  const toggle = useRef<HTMLButtonElement>(null);
+
+  return (
+    <div className="md:hidden" onKeyDown={(event) => {
+      if (event.key === "Escape" && open) {
+        setOpen(false);
+        toggle.current?.focus();
+      }
+    }}>
+      <button ref={toggle} type="button" aria-expanded={open} aria-controls={menuId}
+        aria-label={open ? "Cerrar menú" : "Abrir menú"}
+        onClick={() => setOpen((current) => !current)}
+        className="min-h-11 rounded-full border border-[#20201D]/20 px-3 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68705A]">
+        {open ? "Cerrar" : "Menú"}
+      </button>
+      {open && <div id={menuId} aria-label="Navegación móvil" className="absolute left-0 top-full w-full border-y border-[#20201D]/10 bg-[#FAF8F2] p-4 shadow-lg">
+        <ul className="mx-auto grid max-w-7xl gap-1">
+          {links.map((link) => <li key={link.href}>
+            <Link href={link.href} onClick={() => setOpen(false)} className="flex min-h-11 items-center rounded-xl px-4 py-3 text-sm font-semibold hover:bg-[#F2EBDD] focus-visible:outline-2 focus-visible:outline-[#68705A]">{link.name}</Link>
+          </li>)}
+        </ul>
+      </div>}
+    </div>
+  );
+}
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -65,7 +96,7 @@ export default function Navbar() {
 
   return (
     <header className="absolute left-0 top-0 z-50 w-full">
-      <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-7 lg:px-8">
+      <nav aria-label="Navegación principal" className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-5 sm:px-6 md:py-7 lg:px-8">
 
         {/* LOGO */}
         <Link
@@ -112,7 +143,7 @@ export default function Navbar() {
 
           <Link
             href={isLoggedIn ? "/cuenta" : "/login"}
-            className={`rounded-full border px-4 py-2.5 text-sm font-semibold transition ${
+            className={`hidden rounded-full border px-4 py-2.5 md:inline-flex text-sm font-semibold transition ${
               isActive("/cuenta") || isActive("/login")
                 ? "border-[#68705A] bg-[#68705A]/10 text-[#68705A]"
                 : "border-[#20201D]/20 text-[#20201D] hover:border-[#68705A]"
@@ -123,13 +154,14 @@ export default function Navbar() {
 
           <Link
             href="/cart"
-            className={`flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition ${
+            className={`flex min-h-11 items-center gap-2 rounded-full px-3 py-2.5 sm:px-5 text-sm font-semibold transition ${
               isActive("/cart")
                 ? "bg-[#68705A] text-white"
                 : "bg-[#20201D] text-[#FAF8F2] hover:opacity-80"
             }`}
           >
-            Carrito
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5 sm:hidden"><path d="M3 3h2l2 13h12l2-9H6M9 21h.01M18 21h.01" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            <span className="sr-only sm:not-sr-only">Carrito</span>
 
             {totalItems > 0 && (
               <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-[#F2EBDD] px-1.5 text-xs font-bold text-[#20201D]">
@@ -138,6 +170,11 @@ export default function Navbar() {
             )}
           </Link>
 
+          <MobileMenu key={pathname} links={[
+            ...navigation,
+            { name: isLoggedIn ? "Mi cuenta" : "Iniciar sesión", href: isLoggedIn ? "/cuenta" : "/login" },
+            { name: "Carrito", href: "/cart" },
+          ]} />
         </div>
       </nav>
     </header>
