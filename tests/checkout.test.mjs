@@ -17,6 +17,7 @@ function setup({ catalog, catalogError = null, reservationError = null, env = {}
   const product = { id: 101, name: "Producto nuevo de Supabase", price: 123.45, is_active: true, stock: 10 };
   const rows = catalog ?? [product];
   const calls = { inserts: [], rpc: [], sessions: [], retrieves: [], queries: [] };
+  const authState = { user: null, error: null };
   let order = null;
   let reservations = [];
   const session = {
@@ -65,6 +66,7 @@ function setup({ catalog, catalogError = null, reservationError = null, env = {}
     "@/lib/preview-runtime": { isPreviewEnvironment: () => false },
     "next/server": { NextResponse: { json: (body, options) => ({ status: options?.status ?? 200, body }) } },
     "@/lib/supabase-admin": { supabaseAdmin },
+    "@/lib/supabase-server": { createSupabaseServerClient: async () => ({ auth: { getUser: async () => ({ data: { user: authState.user }, error: authState.error }) } }) },
     "@/lib/stripe": { stripe },
     // Historical fixture reproduces the old six-product allowlist without
     // importing the actual catalog. No new ID exists here.
@@ -80,17 +82,18 @@ function setup({ catalog, catalogError = null, reservationError = null, env = {}
     },
     console: { error() {} },
   }, { timeout: 1000 });
-  async function checkout(items = [{ productId: rows[0]?.id ?? 101, quantity: 2 }]) {
+  async function checkout(items = [{ productId: rows[0]?.id ?? 101, quantity: 2 }], extraBody = {}) {
     return exports.POST({
       headers: { get: () => attemptId }, nextUrl: { origin: "https://shop.invalid" },
       json: async () => ({
+        ...extraBody,
         items,
         customer: { firstName: "Cliente", lastName: "Prueba", email: "cliente@example.invalid", phone: "5512345678" },
         shipping: { address: "Direccion simulada", city: "Ciudad", state: "Estado", postalCode: "12345" },
       }),
     });
   }
-  return { checkout, calls, product };
+  return { checkout, calls, product, authState };
 }
 
 test("a new Supabase product prepares checkout using only database name and price", async () => {
@@ -208,4 +211,54 @@ test("Production pins HTTPS returns and the first purchase uses card payments", 
 test("SQL amount overflow rejects before inserting or reserving", async () => {
   const { checkout, calls } = setup({ catalog: [{ id: 101, name: "Ficticio", price: 21474836.47, stock: 10, is_active: true }] });
   assert.equal((await checkout()).status, 400); assert.equal(calls.inserts.length, 0);
+});
+
+const ownerA = '00000000-0000-4000-8000-000000000001';
+const ownerB = '00000000-0000-4000-8000-000000000002';
+test('guest checkout keeps user_id NULL even when browser supplies owner fields', async () => {
+  const app = setup();
+  assert.equal((await app.checkout(undefined, { user_id: ownerA, userId: ownerA })).status, 200);
+  assert.equal(app.calls.inserts[0].user_id, null);
+});
+test('authenticated checkout binds the verified owner, ignoring browser owner fields', async () => {
+  const app = setup();
+  app.authState.user = { id: ownerA };
+  assert.equal((await app.checkout(undefined, { user_id: ownerB })).status, 200);
+  assert.equal(app.calls.inserts[0].user_id, ownerA);
+  assert.equal(app.calls.inserts[0].total_amount, 24690);
+  assert.equal(app.calls.sessions[0].args.line_items[0].price_data.unit_amount, 12345);
+});
+test('missing Auth session permits guests; Auth validation errors stop before writes or Stripe', async () => {
+  const guest = setup();
+  guest.authState.error = { name: 'AuthSessionMissingError' };
+  assert.equal((await guest.checkout()).status, 200);
+  assert.equal(guest.calls.inserts[0].user_id, null);
+  for (const name of ['AuthApiError', 'AuthRetryableFetchError']) {
+    const app = setup();
+    app.authState.error = { name };
+    assert.equal((await app.checkout()).status, 503);
+    assert.equal(app.calls.inserts.length, 0);
+    assert.equal(app.calls.rpc.length, 0);
+    assert.equal(app.calls.sessions.length, 0);
+  }
+});
+test('same authenticated owner replays checkout without another order', async () => {
+  const app = setup();
+  app.authState.user = { id: ownerA };
+  assert.equal((await app.checkout()).status, 200);
+  assert.equal((await app.checkout()).status, 200);
+  assert.equal(app.calls.inserts.length, 1);
+  assert.equal(app.calls.inserts[0].user_id, ownerA);
+});
+test('a replay cannot claim a guest order, switch owners or reuse an owned order as guest', async () => {
+  for (const [before, after] of [[null, ownerA], [ownerA, ownerB], [ownerA, null]]) {
+    const app = setup();
+    app.authState.user = before ? { id: before } : null;
+    assert.equal((await app.checkout()).status, 200);
+    app.authState.user = after ? { id: after } : null;
+    assert.equal((await app.checkout()).status, 409);
+    assert.equal(app.calls.inserts.length, 1);
+    assert.equal(app.calls.sessions.length, 1);
+    assert.equal(app.calls.retrieves.length, 0);
+  }
 });

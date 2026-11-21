@@ -1,3 +1,4 @@
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { isPreviewEnvironment } from "@/lib/preview-runtime";
 import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
@@ -82,6 +83,14 @@ export async function POST(request: NextRequest) {
         { status: 400 }
     );
     }
+    // Only verified server-side Auth may bind a NEW order. Never use body.user_id/email.
+    const authClient = await createSupabaseServerClient();
+    const { data: authData, error: authError } = await authClient.auth.getUser();
+    if (authError && authError.name !== "AuthSessionMissingError") {
+      return NextResponse.json({ error: "No se pudo verificar la sesión. Intenta nuevamente o vuelve a iniciar sesión." }, { status: 503 });
+    }
+    const userId = authError ? null : authData.user?.id ?? null;
+
     const items: CheckoutItem[] = body.items;
 
     if (!Array.isArray(items) || items.length === 0) {
@@ -268,7 +277,7 @@ export async function POST(request: NextRequest) {
     const { data: existingOrder, error: existingOrderError } =
     await supabaseAdmin
         .from("orders")
-        .select("id, stripe_session_id, payment_status, checkout_fingerprint")
+        .select("id, stripe_session_id, payment_status, checkout_fingerprint, user_id")
         .eq("idempotency_key", idempotencyKey)
         .maybeSingle();
 
@@ -282,6 +291,11 @@ export async function POST(request: NextRequest) {
     }
 
     if (existingOrder) {
+        // A replay never claims a guest order or reuses another user's checkout.
+        if ((existingOrder.user_id ?? null) !== userId) {
+          return NextResponse.json({ error: "Este intento pertenece a otra sesión de usuario. Inicia un nuevo intento de compra." }, { status: 409 });
+        }
+
         if (
             existingOrder.checkout_fingerprint !== checkoutFingerprint
         ) {
@@ -413,6 +427,7 @@ if (reservationsError) {
     const { data: pendingOrder, error: orderError } = await supabaseAdmin
     .from("orders")
     .insert({
+        user_id: userId,
         idempotency_key: idempotencyKey,
         checkout_fingerprint: checkoutFingerprint,
         customer_email: customer.email.trim().toLowerCase(),

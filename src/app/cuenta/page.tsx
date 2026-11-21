@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import OrderHistory from "@/components/account/OrderHistory";
 import Navbar from "@/components/Navbar";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -113,9 +114,7 @@ export default function AccountPage() {
               Mis pedidos
             </h2>
 
-            <p className="mt-3 text-sm text-[#20201D]/60">
-              Próximamente podrás consultar aquí tus compras y su estado.
-            </p>
+            <OrderHistory />
           </div>
 
           <button
